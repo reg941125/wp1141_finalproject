@@ -88,12 +88,8 @@ export default function ChatPage() {
     return () => clearInterval(interval);
   }, [params.id, session]);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = (smooth: boolean = true) => {
+    messagesEndRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' });
   };
 
   const fetchMessages = async () => {
@@ -141,6 +137,8 @@ export default function ChatPage() {
         const newMessage = await response.json();
         setMessages([...messages, newMessage]);
         setMessageContent('');
+        // 只在發送訊息時才自動滾動到底部
+        setTimeout(() => scrollToBottom(), 100);
         // Refresh conversations list
         fetch('/api/conversations').then(() => {
           // Update last message in conversation
