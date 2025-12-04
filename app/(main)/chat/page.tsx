@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface Conversation {
   _id: string;
@@ -112,11 +113,18 @@ export default function ChatListPage() {
                 <div className="flex items-center space-x-4">
                   <div className="flex-shrink-0">
                     {otherUser.image ? (
-                      <img
-                        src={otherUser.image}
-                        alt={otherUser.name}
-                        className="w-12 h-12 rounded-full"
-                      />
+                      <div className="relative w-12 h-12 rounded-full overflow-hidden bg-gray-300 dark:bg-gray-600">
+                        <Image
+                          src={otherUser.image}
+                          alt={otherUser.name}
+                          width={48}
+                          height={48}
+                          className="rounded-full"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </div>
                     ) : (
                       <div className="w-12 h-12 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
                         <span className="text-gray-600 dark:text-gray-300 text-lg">

@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import Image from 'next/image';
 
 interface Message {
   _id: string;
@@ -97,23 +98,24 @@ export default function ChatPage() {
 
   const fetchMessages = async () => {
     try {
-      const response = await fetch(`/api/conversations/${params.id}/messages`);
-      if (response.ok) {
-        const data = await response.json();
-        setMessages(data);
-        
-        // Get conversation info from first message or fetch separately
-        if (data.length > 0 && !conversation) {
-          const convResponse = await fetch('/api/conversations');
-          if (convResponse.ok) {
-            const conversations = await convResponse.json();
-            const currentConv = conversations.find(
-              (c: Conversation) => c._id === params.id
-            );
-            if (currentConv) {
-              setConversation(currentConv);
-            }
-          }
+      // 同時取得訊息和對話資訊
+      const [messagesResponse, conversationsResponse] = await Promise.all([
+        fetch(`/api/conversations/${params.id}/messages`),
+        fetch('/api/conversations')
+      ]);
+
+      if (messagesResponse.ok) {
+        const messagesData = await messagesResponse.json();
+        setMessages(messagesData);
+      }
+
+      if (conversationsResponse.ok) {
+        const conversationsData = await conversationsResponse.json();
+        const currentConv = conversationsData.find(
+          (c: Conversation) => c._id === params.id
+        );
+        if (currentConv) {
+          setConversation(currentConv);
         }
       }
     } catch (error) {
@@ -180,11 +182,19 @@ export default function ChatPage() {
             ← 返回
           </button>
           {otherUser?.image ? (
-            <img
-              src={otherUser.image}
-              alt={otherUser.name}
-              className="w-10 h-10 rounded-full"
-            />
+            <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-300 dark:bg-gray-600">
+              <Image
+                src={otherUser.image}
+                alt={otherUser.name}
+                width={40}
+                height={40}
+                className="rounded-full"
+                onError={(e) => {
+                  // 如果圖片載入失敗，隱藏圖片並顯示預設頭像
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            </div>
           ) : (
             <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
               <span className="text-gray-600 dark:text-gray-300">
