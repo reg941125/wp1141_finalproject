@@ -44,6 +44,7 @@ export default function MarkdownEditor({
     position: { top: 0, left: 0 },
     startPos: 0,
   });
+  const [mobileView, setMobileView] = useState<'edit' | 'preview'>('edit');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -307,19 +308,49 @@ export default function MarkdownEditor({
   }, [latexInput.show]);
 
   return (
-    <div ref={containerRef} className={`border border-gray-300 dark:border-gray-600 rounded-lg ${className} transition-colors`}>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[400px]">
+    <div ref={containerRef} className={`border border-gray-300 dark:border-gray-600 rounded-lg ${className} transition-colors bg-white dark:bg-gray-800 overflow-hidden`}>
+      {/* 手機版切換按鈕 */}
+      <div className="md:hidden flex border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+        <button
+          type="button"
+          onClick={() => setMobileView('edit')}
+          className={`flex-1 px-4 py-3 text-sm font-medium transition-all duration-200 ${
+            mobileView === 'edit'
+              ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 font-semibold'
+              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+          }`}
+        >
+          編輯
+        </button>
+        {showPreview && (
+          <button
+            type="button"
+            onClick={() => setMobileView('preview')}
+            className={`flex-1 px-4 py-3 text-sm font-medium transition-all duration-200 ${
+              mobileView === 'preview'
+                ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 font-semibold'
+                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+          >
+            預覽
+          </button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-0 min-h-[400px] md:min-h-[600px] md:items-stretch">
         {/* 編輯區域 */}
-        <div className="border-r border-gray-200 dark:border-gray-700 pr-4">
-          <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">編輯</div>
-          <div className="relative">
+        <div className={`${mobileView === 'preview' ? 'hidden' : 'block'} md:block md:flex md:flex-col border-r-0 md:border-r border-gray-200 dark:border-gray-700 pr-0 md:pr-6 md:pb-6 py-4 md:py-0`}>
+          <div className="hidden md:flex md:items-center md:justify-between text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 px-6 pt-6 flex-shrink-0">
+            <span>編輯</span>
+          </div>
+          <div className="relative px-4 md:px-6 md:flex-1 md:flex md:flex-col md:min-h-0 md:overflow-hidden">
             <textarea
               ref={textareaRef}
               value={value}
               onChange={handleTextChange}
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
-              className="w-full p-4 min-h-[400px] resize-none focus:outline-none border border-gray-300 dark:border-gray-600 rounded-md font-mono text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 transition-colors"
+              className="w-full p-4 min-h-[400px] md:flex-1 md:min-h-0 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 border border-gray-300 dark:border-gray-600 rounded-lg font-mono text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 transition-all shadow-sm overflow-auto"
               style={{
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-word',
@@ -350,11 +381,13 @@ export default function MarkdownEditor({
 
         {/* 預覽區域 */}
         {showPreview && (
-          <div className="pl-4">
-            <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">預覽</div>
+          <div className={`${mobileView === 'edit' ? 'hidden' : 'block'} md:block md:flex md:flex-col pl-0 md:pl-6 md:pb-6 py-4 md:py-0`}>
+            <div className="hidden md:flex md:items-center md:justify-between text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 px-6 pt-6 flex-shrink-0">
+              <span>預覽</span>
+            </div>
             <div
               ref={previewRef}
-              className="p-4 min-h-[400px] border border-gray-300 dark:border-gray-600 rounded-md overflow-auto bg-white dark:bg-gray-800 transition-colors"
+              className="p-4 min-h-[400px] md:flex-1 md:min-h-0 border border-gray-300 dark:border-gray-600 rounded-lg overflow-auto bg-white dark:bg-gray-800 transition-colors mx-4 md:mx-6 shadow-sm"
             >
               {value ? (
                 <MarkdownRenderer content={value} />

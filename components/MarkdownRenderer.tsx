@@ -3,6 +3,7 @@
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
 import rehypeKatex from 'rehype-katex';
 import { parseLaTeX } from './LaTeXParser';
 import Image from 'next/image';
@@ -19,7 +20,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
   return (
     <div className={`prose prose-sm max-w-none ${className}`}>
       <ReactMarkdown
-        remarkPlugins={[remarkMath, remarkGfm]}
+        remarkPlugins={[remarkMath, remarkGfm, remarkBreaks]}
         rehypePlugins={[[rehypeKatex, { throwOnError: false }]]}
         components={{
           img: ({ node, ...props }) => (
@@ -31,7 +32,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
               className="rounded-lg"
             />
           ),
-          p: ({ node, ...props }) => <p className="mb-2" {...props} />,
+          p: ({ node, ...props }) => <p className="py-1 text-sm" {...props} />,
           h1: ({ node, ...props }) => (
             <h1 
               className="mb-2 mt-4 font-bold text-gray-900 dark:text-gray-100" 
@@ -53,8 +54,8 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
               {...props} 
             />
           ),
-          ul: ({ node, ...props }) => <ul className="mb-2 list-disc pl-6" {...props} />,
-          ol: ({ node, ...props }) => <ol className="mb-2 list-decimal pl-6" {...props} />,
+          ul: ({ node, ...props }) => <ul className="mb-2 list-disc pl-6 text-sm" {...props} />,
+          ol: ({ node, ...props }) => <ol className="mb-2 list-decimal pl-6 text-sm" {...props} />,
           li: ({ node, ...props }) => <li className="mb-1" {...props} />,
           code: ({ node, inline, ...props }: any) => {
             if (inline) {
