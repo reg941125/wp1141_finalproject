@@ -20,7 +20,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
     <div className={`prose prose-sm max-w-none ${className}`}>
       <ReactMarkdown
         remarkPlugins={[remarkMath, remarkGfm]}
-        rehypePlugins={[rehypeKatex]}
+        rehypePlugins={[[rehypeKatex, { throwOnError: false }]]}
         components={{
           img: ({ node, ...props }) => (
             <Image
@@ -31,7 +31,38 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
               className="rounded-lg"
             />
           ),
-          p: ({ node, ...props }) => <p className="mb-0" {...props} />,
+          p: ({ node, ...props }) => <p className="mb-2" {...props} />,
+          h1: ({ node, ...props }) => (
+            <h1 
+              className="mb-2 mt-4 font-bold text-gray-900" 
+              style={{ fontSize: '2em', lineHeight: '1.2', fontWeight: 700 }}
+              {...props} 
+            />
+          ),
+          h2: ({ node, ...props }) => (
+            <h2 
+              className="mb-2 mt-4 font-semibold text-gray-900" 
+              style={{ fontSize: '1.5em', lineHeight: '1.3', fontWeight: 600 }}
+              {...props} 
+            />
+          ),
+          h3: ({ node, ...props }) => (
+            <h3 
+              className="mb-2 mt-3 font-semibold text-gray-900" 
+              style={{ fontSize: '1.25em', lineHeight: '1.4', fontWeight: 600 }}
+              {...props} 
+            />
+          ),
+          ul: ({ node, ...props }) => <ul className="mb-2 list-disc pl-6" {...props} />,
+          ol: ({ node, ...props }) => <ol className="mb-2 list-decimal pl-6" {...props} />,
+          li: ({ node, ...props }) => <li className="mb-1" {...props} />,
+          code: ({ node, inline, ...props }: any) => {
+            if (inline) {
+              return <code className="bg-gray-100 px-1 py-0.5 rounded text-sm" {...props} />;
+            }
+            return <code className="block bg-gray-100 p-2 rounded text-sm overflow-x-auto" {...props} />;
+          },
+          pre: ({ node, ...props }) => <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto mb-2" {...props} />,
         }}
       >
         {processedContent}
@@ -66,7 +97,29 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
           background-color: transparent;
           padding: 0;
         }
-        .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+        .prose h1 {
+          font-size: 2em;
+          font-weight: 700;
+          margin-top: 0.5em;
+          margin-bottom: 0.25em;
+          line-height: 1.2;
+        }
+        .prose h2 {
+          font-size: 1.5em;
+          font-weight: 600;
+          margin-top: 0.5em;
+          margin-bottom: 0.25em;
+          line-height: 1.3;
+        }
+        .prose h3 {
+          font-size: 1.25em;
+          font-weight: 600;
+          margin-top: 0.5em;
+          margin-bottom: 0.25em;
+          line-height: 1.4;
+        }
+        .prose h4, .prose h5, .prose h6 {
+          font-weight: 600;
           margin-top: 0.5em;
           margin-bottom: 0.25em;
         }

@@ -57,3 +57,4 @@ const JobPostingModel: Model<JobPosting> = mongoose.models.JobPosting || mongoos
 
 export default JobPostingModel;
 
+

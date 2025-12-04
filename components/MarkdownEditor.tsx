@@ -63,12 +63,6 @@ export default function MarkdownEditor({
     reader.readAsDataURL(file);
   };
 
-  // Sync scroll between textarea and preview
-  const handleScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
-    if (previewRef.current) {
-      previewRef.current.scrollTop = e.currentTarget.scrollTop;
-    }
-  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     const textarea = e.currentTarget;
@@ -86,38 +80,48 @@ export default function MarkdownEditor({
         handleSlashMenuClose();
         return;
       }
-      if (e.key === 'Backspace' && cursorPos === slashMenu.startPos) {
-        e.preventDefault();
-        handleSlashMenuClose();
-        return;
+      if (e.key === 'Backspace' && cursorPos <= slashMenu.startPos + 1) {
+        // If backspace would delete the /, close menu
+        // Don't prevent default, let the backspace happen
+        setTimeout(() => {
+          if (textareaRef.current && textareaRef.current.selectionStart <= slashMenu.startPos) {
+            handleSlashMenuClose();
+          }
+        }, 0);
       }
     }
 
-    // Check for slash command
+    // Check for slash command - don't prevent default, let / be inserted
     if (e.key === '/' && !slashMenu.show && !latexInput.show) {
       // Check if / is at the start of line or after whitespace
       const charBefore = textBeforeCursor.slice(-1);
       if (cursorPos === 0 || charBefore === '\n' || charBefore === ' ') {
-        e.preventDefault();
-        const rect = textarea.getBoundingClientRect();
-        const containerRect = containerRef.current?.getBoundingClientRect();
-        
-        const scrollTop = containerRef.current?.scrollTop || 0;
-        const scrollLeft = containerRef.current?.scrollLeft || 0;
-        
-        // Calculate position based on cursor
-        const lineHeight = 20;
-        const linesBeforeCursor = textBeforeCursor.split('\n').length - 1;
-        
-        setSlashMenu({
-          show: true,
-          position: {
-            top: rect.top - (containerRect?.top || 0) + scrollTop + (linesBeforeCursor * lineHeight) + 5,
-            left: rect.left - (containerRect?.left || 0) + scrollLeft,
-          },
-          startPos: cursorPos,
-        });
-        return;
+        // Don't prevent default - let / be inserted
+        // Show menu after / is inserted
+        setTimeout(() => {
+          if (textareaRef.current) {
+            const rect = textareaRef.current.getBoundingClientRect();
+            const containerRect = containerRef.current?.getBoundingClientRect();
+            
+            const scrollTop = containerRef.current?.scrollTop || 0;
+            const scrollLeft = containerRef.current?.scrollLeft || 0;
+            
+            // Calculate position based on cursor (after / is inserted)
+            const newCursorPos = textareaRef.current.selectionStart;
+            const textBeforeNewCursor = value.slice(0, newCursorPos - 1);
+            const lineHeight = 20;
+            const linesBeforeCursor = textBeforeNewCursor.split('\n').length - 1;
+            
+            setSlashMenu({
+              show: true,
+              position: {
+                top: rect.top - (containerRect?.top || 0) + scrollTop + (linesBeforeCursor * lineHeight) + 5,
+                left: rect.left - (containerRect?.left || 0) + scrollLeft,
+              },
+              startPos: newCursorPos - 1, // Position of the /
+            });
+          }
+        }, 0);
       }
     }
 
@@ -125,14 +129,15 @@ export default function MarkdownEditor({
     if (e.key === ' ' && !latexInput.show && !slashMenu.show) {
       const lastChars = textBeforeCursor.slice(-7);
 
-      if (lastChars.endsWith('\\in ')) {
+      if (lastChars.endsWith('/in ')) {
         e.preventDefault();
         showLaTeXInput('inline', cursorPos - 4, textarea);
-      } else if (lastChars.endsWith('\\block ')) {
+      } else if (lastChars.endsWith('/block ')) {
         e.preventDefault();
         showLaTeXInput('block', cursorPos - 7, textarea);
       }
     }
+
   };
 
   const showLaTeXInput = (type: 'inline' | 'block', startPos: number, textarea: HTMLTextAreaElement) => {
@@ -157,12 +162,14 @@ export default function MarkdownEditor({
     if (!textareaRef.current) return;
 
     const startPos = slashMenu.startPos;
+    const currentCursorPos = textareaRef.current.selectionStart;
     let insertText = '';
 
     switch (command.id) {
       case 'text':
-        insertText = '';
-        break;
+        // Keep the /, just close menu
+        setSlashMenu({ ...slashMenu, show: false });
+        return;
       case 'heading1':
         insertText = '# ';
         break;
@@ -176,24 +183,25 @@ export default function MarkdownEditor({
         insertText = '- ';
         break;
       case 'inline-equation':
-        insertText = '\\in ';
+        insertText = '/in ';
         break;
       case 'block-equation':
-        insertText = '\\block ';
+        insertText = '/block ';
         break;
       default:
         insertText = '';
     }
 
-    const before = value.slice(0, startPos - 1); // Remove the /
-    const after = value.slice(startPos);
+    // Replace from / to current cursor position with the command text
+    const before = value.slice(0, startPos);
+    const after = value.slice(currentCursorPos);
     const newValue = before + insertText + after;
 
     onChange(newValue);
 
     setTimeout(() => {
       if (textareaRef.current) {
-        const newPos = startPos - 1 + insertText.length;
+        const newPos = startPos + insertText.length;
         textareaRef.current.setSelectionRange(newPos, newPos);
         textareaRef.current.focus();
 
@@ -203,7 +211,7 @@ export default function MarkdownEditor({
             if (textareaRef.current) {
               showLaTeXInput(
                 command.id === 'inline-equation' ? 'inline' : 'block',
-                newPos - (command.id === 'inline-equation' ? 4 : 6),
+                newPos - (command.id === 'inline-equation' ? 4 : 7),
                 textareaRef.current
               );
             }
@@ -216,21 +224,7 @@ export default function MarkdownEditor({
   };
 
   const handleSlashMenuClose = () => {
-    if (!textareaRef.current) return;
-
-    const before = value.slice(0, slashMenu.startPos - 1);
-    const after = value.slice(slashMenu.startPos);
-    const newValue = before + after;
-
-    onChange(newValue);
-
-    setTimeout(() => {
-      if (textareaRef.current) {
-        textareaRef.current.setSelectionRange(slashMenu.startPos - 1, slashMenu.startPos - 1);
-        textareaRef.current.focus();
-      }
-    }, 0);
-
+    // Just close the menu, don't remove the /
     setSlashMenu({ ...slashMenu, show: false });
   };
 
@@ -240,11 +234,12 @@ export default function MarkdownEditor({
 
     // Update slash menu filter if menu is showing
     if (slashMenu.show) {
-      const textAfterSlash = newValue.slice(slashMenu.startPos, cursorPos);
-      // If user deleted the slash or moved cursor, close menu
-      if (textAfterSlash === '' || !textAfterSlash.startsWith('/')) {
+      const textAfterSlash = newValue.slice(slashMenu.startPos + 1, cursorPos); // +1 to skip the /
+      // If user deleted the slash or moved cursor before it, close menu
+      if (cursorPos <= slashMenu.startPos || newValue[slashMenu.startPos] !== '/') {
         setSlashMenu({ ...slashMenu, show: false });
       }
+      // Otherwise, update filter with text after /
     }
 
     onChange(newValue);
@@ -253,10 +248,10 @@ export default function MarkdownEditor({
   const handleLaTeXConfirm = (latexValue: string) => {
     if (!textareaRef.current) return;
 
-    const prefix = latexInput.type === 'inline' ? '\\in ' : '\\block ';
-    const newText = `\\${latexInput.type === 'inline' ? 'in' : 'block'}{${latexValue}}`;
+    const prefix = latexInput.type === 'inline' ? '/in ' : '/block ';
+    const newText = `/${latexInput.type === 'inline' ? 'in' : 'block'}{${latexValue}}`;
     
-    // Replace the \in  or \block  with the complete syntax
+    // Replace the /in  or /block  with the complete syntax
     const before = value.slice(0, latexInput.startPos);
     const after = value.slice(latexInput.startPos + prefix.length);
     const newValue = before + newText + after;
@@ -278,8 +273,8 @@ export default function MarkdownEditor({
   const handleLaTeXCancel = () => {
     if (!textareaRef.current) return;
 
-    // Remove the \in  or \block  that was typed (including the space)
-    const prefix = latexInput.type === 'inline' ? '\\in ' : '\\block ';
+    // Remove the /in  or /block  that was typed (including the space)
+    const prefix = latexInput.type === 'inline' ? '/in ' : '/block ';
     const before = value.slice(0, latexInput.startPos);
     const after = value.slice(latexInput.startPos + prefix.length);
     const newValue = before + after;
@@ -312,73 +307,61 @@ export default function MarkdownEditor({
   }, [latexInput.show]);
 
   return (
-    <div ref={containerRef} className={`border rounded-lg relative ${className}`}>
-      <div className="relative min-h-[200px] overflow-hidden">
-        {/* Preview Layer (Background) */}
-        <div
-          ref={previewRef}
-          className="absolute inset-0 p-4 overflow-auto pointer-events-none"
-        >
-          <div 
-            className="prose prose-sm max-w-none text-gray-900"
-            style={{
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word',
-            }}
-          >
-            <MarkdownRenderer content={value || ''} />
+    <div ref={containerRef} className={`border rounded-lg ${className}`}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[400px]">
+        {/* 編輯區域 */}
+        <div className="border-r border-gray-200 pr-4">
+          <div className="text-sm font-semibold text-gray-700 mb-2">編輯</div>
+          <div className="relative">
+            <textarea
+              ref={textareaRef}
+              value={value}
+              onChange={handleTextChange}
+              onKeyDown={handleKeyDown}
+              placeholder={placeholder}
+              className="w-full p-4 min-h-[400px] resize-none focus:outline-none border border-gray-300 rounded-md font-mono text-sm"
+              style={{
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+              }}
+            />
+
+            {/* Slash Command Menu */}
+            {slashMenu.show && (
+              <SlashCommandMenu
+                position={slashMenu.position}
+                filter={value.slice(slashMenu.startPos + 1, textareaRef.current?.selectionStart || slashMenu.startPos + 1)}
+                onSelect={handleSlashCommand}
+                onClose={handleSlashMenuClose}
+              />
+            )}
+
+            {/* LaTeX Input */}
+            {latexInput.show && (
+              <LaTeXInput
+                type={latexInput.type}
+                onConfirm={handleLaTeXConfirm}
+                onCancel={handleLaTeXCancel}
+                position={latexInput.position}
+              />
+            )}
           </div>
         </div>
 
-        {/* Textarea Layer (Foreground) */}
-        <textarea
-          ref={textareaRef}
-          value={value}
-          onChange={handleTextChange}
-          onKeyDown={handleKeyDown}
-          onScroll={handleScroll}
-          placeholder={placeholder}
-          className="relative w-full p-4 min-h-[200px] resize-none focus:outline-none bg-transparent text-transparent caret-blue-600 z-10"
-          style={{
-            whiteSpace: 'pre-wrap',
-            wordBreak: 'break-word',
-            fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-            fontSize: '0.875rem',
-            lineHeight: '1.7142857',
-          }}
-        />
-
-        {/* Placeholder overlay when empty */}
-        {!value && (
-          <div className="absolute inset-0 p-4 pointer-events-none text-gray-400 z-0">
-            {placeholder}
-          </div>
-        )}
-
-        {/* Slash Command Menu */}
-        {slashMenu.show && (
-          <SlashCommandMenu
-            position={slashMenu.position}
-            filter={value.slice(slashMenu.startPos + 1, textareaRef.current?.selectionStart || slashMenu.startPos + 1)}
-            onSelect={handleSlashCommand}
-            onClose={handleSlashMenuClose}
-          />
-        )}
-
-        {/* LaTeX Input */}
-        {latexInput.show && (
-          <LaTeXInput
-            type={latexInput.type}
-            onConfirm={handleLaTeXConfirm}
-            onCancel={handleLaTeXCancel}
-            position={latexInput.position}
-          />
-        )}
-
-        {/* Hint */}
-        {value && !slashMenu.show && !latexInput.show && (
-          <div className="absolute bottom-2 right-2 text-xs text-gray-400 pointer-events-none z-20">
-            輸入 / 來開啟命令選單
+        {/* 預覽區域 */}
+        {showPreview && (
+          <div className="pl-4">
+            <div className="text-sm font-semibold text-gray-700 mb-2">預覽</div>
+            <div
+              ref={previewRef}
+              className="p-4 min-h-[400px] border border-gray-300 rounded-md overflow-auto bg-white"
+            >
+              {value ? (
+                <MarkdownRenderer content={value} />
+              ) : (
+                <span className="text-gray-400">{placeholder}</span>
+              )}
+            </div>
           </div>
         )}
       </div>

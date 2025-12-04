@@ -44,6 +44,11 @@ export default function QuestionDetailPage() {
   const [answerImages, setAnswerImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editContent, setEditContent] = useState('');
+  const [editTags, setEditTags] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (params.id) {
@@ -52,18 +57,24 @@ export default function QuestionDetailPage() {
     }
   }, [params.id]);
 
-  const fetchPost = async () => {
+  const fetchPost = async (incrementViews = true) => {
     try {
       const response = await fetch(`/api/posts/${params.id}`);
       if (response.ok) {
         const data = await response.json();
         setPost(data);
-        // Increment views
-        await fetch(`/api/posts/${params.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ views: data.views + 1 }),
-        });
+        setEditTitle(data.title);
+        setEditContent(data.content);
+        setEditTags(data.tags.join(', '));
+        
+        // Increment views only on initial load
+        if (incrementViews && !isEditing) {
+          await fetch(`/api/posts/${params.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ views: data.views + 1 }),
+          });
+        }
       }
     } catch (error) {
       console.error('Error fetching post:', error);
@@ -139,6 +150,51 @@ export default function QuestionDetailPage() {
     }
   };
 
+  const handleSaveEdit = async () => {
+    if (!post || !editTitle.trim() || !editContent.trim()) return;
+
+    setSaving(true);
+    try {
+      const tagArray = editTags.split(',').map((t) => t.trim()).filter(Boolean);
+      const response = await fetch(`/api/posts/${params.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: editTitle,
+          content: editContent,
+          tags: tagArray,
+        }),
+      });
+
+      if (response.ok) {
+        setIsEditing(false);
+        fetchPost(false); // Don't increment views when refreshing after edit
+      }
+    } catch (error) {
+      console.error('Error updating post:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeletePost = async () => {
+    if (!post || !confirm('確定要刪除此題目嗎？')) return;
+
+    try {
+      const response = await fetch(`/api/posts/${params.id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        router.push('/');
+      }
+    } catch (error) {
+      console.error('Error deleting post:', error);
+    }
+  };
+
+  const isAuthor = session?.user?.id === post?.authorId._id.toString();
+
   if (loading) {
     return <div className="max-w-4xl mx-auto px-4 py-8">載入中...</div>;
   }
@@ -150,30 +206,109 @@ export default function QuestionDetailPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">{post.title}</h1>
-        <div className="flex items-center justify-between mb-4 text-sm text-gray-500">
-          <div className="flex items-center space-x-4">
-            <span>{post.authorId?.name || '匿名'}</span>
-            <span>{new Date(post.createdAt).toLocaleDateString('zh-TW')}</span>
+        {isEditing ? (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                標題
+              </label>
+              <input
+                type="text"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="請輸入題目標題"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                內容
+              </label>
+              <MarkdownEditor
+                value={editContent}
+                onChange={setEditContent}
+                placeholder="輸入題目內容..."
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                標籤（以逗號分隔）
+              </label>
+              <input
+                type="text"
+                value={editTags}
+                onChange={(e) => setEditTags(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="例如：數學, 微積分, 高中"
+              />
+            </div>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => {
+                  setIsEditing(false);
+                  setEditTitle(post.title);
+                  setEditContent(post.content);
+                  setEditTags(post.tags.join(', '));
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={saving || !editTitle.trim() || !editContent.trim()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+              >
+                {saving ? '儲存中...' : '儲存'}
+              </button>
+            </div>
           </div>
-          <div className="flex items-center space-x-4">
-            <span>👁️ {post.views}</span>
-            <span>👍 {post.likes}</span>
-          </div>
-        </div>
-        <div className="flex space-x-2 mb-4">
-          {post.tags.map((tag) => (
-            <span
-              key={tag}
-              className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-        <div className="prose max-w-none">
-          <MarkdownRenderer content={post.content} />
-        </div>
+        ) : (
+          <>
+            <div className="flex items-start justify-between mb-4">
+              <h1 className="text-3xl font-bold text-gray-900 flex-1">{post.title}</h1>
+              {isAuthor && (
+                <div className="flex space-x-2 ml-4">
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 border border-blue-600 rounded hover:bg-blue-50"
+                  >
+                    編輯
+                  </button>
+                  <button
+                    onClick={handleDeletePost}
+                    className="px-3 py-1 text-sm text-red-600 hover:text-red-800 border border-red-600 rounded hover:bg-red-50"
+                  >
+                    刪除
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="flex items-center justify-between mb-4 text-sm text-gray-500">
+              <div className="flex items-center space-x-4">
+                <span>{post.authorId?.name || '匿名'}</span>
+                <span>{new Date(post.createdAt).toLocaleDateString('zh-TW')}</span>
+              </div>
+              <div className="flex items-center space-x-4">
+                <span>👁️ {post.views}</span>
+                <span>👍 {post.likes}</span>
+              </div>
+            </div>
+            <div className="flex space-x-2 mb-4">
+              {post.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+            <div className="prose max-w-none">
+              <MarkdownRenderer content={post.content} />
+            </div>
+          </>
+        )}
       </div>
 
       <div className="bg-white rounded-lg shadow p-6 mb-6">
@@ -273,4 +408,5 @@ export default function QuestionDetailPage() {
     </div>
   );
 }
+
 

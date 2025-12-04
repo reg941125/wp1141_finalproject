@@ -30,11 +30,6 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     await dbConnect();
     const post = await PostModel.findById(params.id);
 
@@ -42,15 +37,37 @@ export async function PUT(
       return NextResponse.json({ error: 'Post not found' }, { status: 404 });
     }
 
-    if (post.authorId.toString() !== session.user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
     const updates = await request.json();
-    Object.assign(post, updates);
-    await post.save();
+    
+    // Views can be updated by anyone (for view counting)
+    if (updates.views !== undefined) {
+      post.views = updates.views;
+    }
+    
+    // Other fields require authentication and ownership
+    if (updates.title !== undefined || updates.content !== undefined || updates.tags !== undefined) {
+      const session = await auth();
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
 
-    return NextResponse.json(post);
+      if (post.authorId.toString() !== session.user.id) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+
+      if (updates.title !== undefined) post.title = updates.title;
+      if (updates.content !== undefined) post.content = updates.content;
+      if (updates.tags !== undefined) post.tags = updates.tags;
+    }
+    
+    if (updates.likes !== undefined) {
+      post.likes = updates.likes;
+    }
+    
+    await post.save();
+    
+    const updatedPost = await PostModel.findById(params.id).populate('authorId', 'name');
+    return NextResponse.json(updatedPost);
   } catch (error) {
     console.error('Error updating post:', error);
     return NextResponse.json(

@@ -56,14 +56,14 @@ const commands: Command[] = [
     id: 'inline-equation',
     label: 'Inline equation',
     icon: '√x',
-    shortcut: '\\in',
+    shortcut: '/in',
     action: () => {},
   },
   {
     id: 'block-equation',
     label: 'Block equation',
     icon: 'TEX',
-    shortcut: '\\block',
+    shortcut: '/block',
     action: () => {},
   },
 ];
