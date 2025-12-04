@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 
@@ -34,9 +34,11 @@ const educationLevelMap = {
 
 export default function JobPostingDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const { data: session } = useSession();
   const [posting, setPosting] = useState<JobPosting | null>(null);
   const [loading, setLoading] = useState(true);
+  const [creatingConversation, setCreatingConversation] = useState(false);
 
   useEffect(() => {
     if (params.id) {
@@ -127,23 +129,35 @@ export default function JobPostingDetailPage() {
         {session && session.user.id !== posting.authorId._id && (
           <button
             onClick={async () => {
+              if (creatingConversation) return;
+              
+              setCreatingConversation(true);
               try {
                 const response = await fetch('/api/conversations', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ otherUserId: posting.authorId._id }),
                 });
+                
                 if (response.ok) {
                   const conversation = await response.json();
-                  window.location.href = `/chat/${conversation._id}`;
+                  // 使用 Next.js router 進行客戶端導航，避免重新載入頁面
+                  router.push(`/chat/${conversation._id}`);
+                } else {
+                  console.error('Failed to create conversation:', response.status);
+                  alert('建立對話失敗，請稍後再試');
                 }
               } catch (error) {
                 console.error('Error creating conversation:', error);
+                alert('建立對話時發生錯誤');
+              } finally {
+                setCreatingConversation(false);
               }
             }}
-            className="bg-green-600 dark:bg-green-700 text-white px-4 py-2 rounded-md hover:bg-green-700 dark:hover:bg-green-600 transition-colors"
+            disabled={creatingConversation}
+            className="bg-green-600 dark:bg-green-700 text-white px-4 py-2 rounded-md hover:bg-green-700 dark:hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            私訊發布者
+            {creatingConversation ? '建立對話中...' : '私訊發布者'}
           </button>
         )}
         <Link

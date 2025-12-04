@@ -172,10 +172,8 @@ export default function EditProfilePage() {
       });
 
       if (response.ok) {
-        const userData = await response.json();
-        // Redirect to username if available, otherwise use ID
-        const profilePath = userData.username || session.user.id;
-        router.push(`/profile/${profilePath}`);
+        // 始終使用 ID 重定向，確保穩定性
+        router.push(`/profile/${session.user.id}`);
       } else {
         const error = await response.json();
         if (error.error === 'Username already taken') {

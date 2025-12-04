@@ -40,6 +40,11 @@ export default function ChatPage() {
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const unreadDividerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [firstUnreadMessageId, setFirstUnreadMessageId] = useState<string | null>(null);
+  const [shouldScrollToUnread, setShouldScrollToUnread] = useState(false);
+  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
 
   useEffect(() => {
     // 如果未登入，立即清除所有數據並重定向
@@ -47,6 +52,9 @@ export default function ChatPage() {
       setMessages([]);
       setConversation(null);
       setMessageContent('');
+      setFirstUnreadMessageId(null);
+      setShouldScrollToUnread(false);
+      setShouldScrollToBottom(false);
       setLoading(false);
       router.push('/login');
       return;
@@ -59,7 +67,7 @@ export default function ChatPage() {
         Notification.requestPermission();
       }
       
-      fetchMessages();
+      fetchMessages(true);
       
       // Poll for new messages every 2 seconds
       let previousMessageIds = new Set<string>();
@@ -98,11 +106,41 @@ export default function ChatPage() {
     }
   }, [params.id, session, status, router]);
 
-  const scrollToBottom = (smooth: boolean = true) => {
-    messagesEndRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' });
+  const scrollToBottom = () => {
+    // 滾動聊天室容器到底部，而不是整個頁面
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   };
 
-  const fetchMessages = async () => {
+  const scrollToUnread = () => {
+    // 滾動到未讀分隔線
+    if (unreadDividerRef.current && messagesContainerRef.current) {
+      const dividerTop = unreadDividerRef.current.offsetTop;
+      const containerHeight = messagesContainerRef.current.clientHeight;
+      // 將未讀分隔線滾動到容器中間偏上的位置
+      messagesContainerRef.current.scrollTop = dividerTop - containerHeight / 3;
+    }
+  };
+
+  // 在訊息載入後滾動到未讀位置或底部
+  useEffect(() => {
+    if (shouldScrollToUnread && firstUnreadMessageId && messages.length > 0) {
+      // 給 DOM 一點時間渲染
+      setTimeout(() => {
+        scrollToUnread();
+        setShouldScrollToUnread(false);
+      }, 100);
+    } else if (shouldScrollToBottom && messages.length > 0) {
+      // 沒有未讀訊息時，滾動到聊天室底部
+      setTimeout(() => {
+        scrollToBottom();
+        setShouldScrollToBottom(false);
+      }, 100);
+    }
+  }, [shouldScrollToUnread, shouldScrollToBottom, firstUnreadMessageId, messages]);
+
+  const fetchMessages = async (isInitialLoad: boolean = false) => {
     try {
       // 同時取得訊息和對話資訊
       const [messagesResponse, conversationsResponse] = await Promise.all([
@@ -112,6 +150,22 @@ export default function ChatPage() {
 
       if (messagesResponse.ok) {
         const messagesData = await messagesResponse.json();
+        
+        // 只在初次載入時記錄第一條未讀訊息的 ID
+        if (isInitialLoad && !firstUnreadMessageId) {
+          const firstUnread = messagesData.find(
+            (msg: Message) => !msg.read && msg.senderId._id !== session?.user?.id
+          );
+          if (firstUnread) {
+            // 有未讀訊息：滾動到未讀分隔線
+            setFirstUnreadMessageId(firstUnread._id);
+            setShouldScrollToUnread(true);
+          } else {
+            // 沒有未讀訊息：滾動到底部
+            setShouldScrollToBottom(true);
+          }
+        }
+        
         setMessages(messagesData);
       }
 
@@ -147,8 +201,12 @@ export default function ChatPage() {
         const newMessage = await response.json();
         setMessages([...messages, newMessage]);
         setMessageContent('');
-        // 只在發送訊息時才自動滾動到底部
+        // 發送訊息後自動滾動聊天室到底部
         setTimeout(() => scrollToBottom(), 100);
+        // 自動聚焦回輸入框
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 150);
         // Refresh conversations list
         fetch('/api/conversations').then(() => {
           // Update last message in conversation
@@ -238,48 +296,88 @@ export default function ChatPage() {
               尚無訊息，開始對話吧！
             </div>
           ) : (
-            messages.map((message) => {
+            messages.map((message, index) => {
               const isMe = message.senderId._id === session?.user?.id;
+              const prevMessage = index > 0 ? messages[index - 1] : null;
+              
+              // 檢查是否需要顯示日期分隔線
+              const messageDate = new Date(message.createdAt);
+              const prevMessageDate = prevMessage ? new Date(prevMessage.createdAt) : null;
+              const showDateDivider = !prevMessageDate || 
+                messageDate.toDateString() !== prevMessageDate.toDateString();
+              
+              // 檢查是否需要顯示未讀分隔線（使用初次載入時記錄的第一條未讀訊息）
+              const isFirstUnread = firstUnreadMessageId && message._id === firstUnreadMessageId;
+              
               return (
-                <div
-                  key={message._id}
-                  className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                      isMe
-                        ? 'bg-blue-600 dark:bg-blue-700 text-white'
-                        : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white'
-                    }`}
-                  >
-                    {!isMe && (
-                      <p className="text-xs font-semibold mb-1 opacity-75">
-                        {message.senderId.name}
-                      </p>
-                    )}
-                    <p className="text-sm whitespace-pre-wrap">
-                      {message.content}
-                    </p>
-                    <div className="flex items-center justify-end mt-1 space-x-2">
-                      <p
-                        className={`text-xs ${
-                          isMe ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
-                        }`}
-                      >
-                        {new Date(message.createdAt).toLocaleTimeString('zh-TW', {
-                          hour: '2-digit',
-                          minute: '2-digit',
+                <div key={message._id}>
+                  {/* 日期分隔線 */}
+                  {showDateDivider && (
+                    <div className="flex items-center my-6">
+                      <div className="flex-1 h-px bg-gray-300 dark:bg-gray-700"></div>
+                      <div className="px-4 text-xs font-semibold text-gray-600 dark:text-gray-400">
+                        {messageDate.toLocaleDateString('zh-TW', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          weekday: 'short'
                         })}
+                      </div>
+                      <div className="flex-1 h-px bg-gray-300 dark:bg-gray-700"></div>
+                    </div>
+                  )}
+                  
+                  {/* 未讀分隔線 */}
+                  {isFirstUnread && (
+                    <div ref={unreadDividerRef} className="flex items-center my-4">
+                      <div className="flex-1 h-px bg-red-500"></div>
+                      <div className="px-3 py-1 text-xs font-bold text-red-500 uppercase">
+                        新訊息
+                      </div>
+                      <div className="flex-1 h-px bg-red-500"></div>
+                    </div>
+                  )}
+                  
+                  {/* 訊息氣泡 */}
+                  <div
+                    className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                        isMe
+                          ? 'bg-blue-600 dark:bg-blue-700 text-white'
+                          : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white'
+                      }`}
+                    >
+                      {!isMe && (
+                        <p className="text-xs font-semibold mb-1 opacity-75">
+                          {message.senderId.name}
+                        </p>
+                      )}
+                      <p className="text-sm whitespace-pre-wrap">
+                        {message.content}
                       </p>
-                      {isMe && (
-                        <span
+                      <div className="flex items-center justify-end mt-1 space-x-2">
+                        <p
                           className={`text-xs ${
                             isMe ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
                           }`}
                         >
-                          {message.read ? '✓✓' : '✓'}
-                        </span>
-                      )}
+                          {new Date(message.createdAt).toLocaleTimeString('zh-TW', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                        {isMe && (
+                          <span
+                            className={`text-xs ${
+                              isMe ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
+                            }`}
+                          >
+                            {message.read ? '✓✓' : '✓'}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -295,6 +393,7 @@ export default function ChatPage() {
           className="border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center space-x-4"
         >
           <input
+            ref={inputRef}
             type="text"
             value={messageContent}
             onChange={(e) => setMessageContent(e.target.value)}

@@ -21,11 +21,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const savedTheme = localStorage.getItem('theme') as Theme | null;
     if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark')) {
       setTheme(savedTheme);
-      if (savedTheme === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
+      // dark class 已經在 layout.tsx 的 inline script 中設置了，這裡只需要同步狀態
     } else {
       // 預設使用淺色模式
       setTheme('light');
