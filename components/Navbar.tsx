@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import ThemeToggle from './ThemeToggle';
 
 export default function Navbar() {
   const { data: session } = useSession();
@@ -46,12 +47,12 @@ export default function Navbar() {
   }, [session]);
 
   return (
-    <nav className="bg-white shadow-lg">
+    <nav className="bg-white dark:bg-gray-900 shadow-lg transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <Link href="/" className="text-xl font-bold text-blue-600">
+              <Link href="/" className="text-xl font-bold text-blue-600 dark:text-blue-400">
                 家教網平台
               </Link>
             </div>
@@ -60,9 +61,9 @@ export default function Navbar() {
                 href="/"
                 className={`${
                   isActive('/')
-                    ? 'border-blue-500 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
+                    ? 'border-blue-500 text-gray-900 dark:text-gray-100'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-200'
+                } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors`}
               >
                 題目討論
               </Link>
@@ -70,9 +71,9 @@ export default function Navbar() {
                 href="/tutoring"
                 className={`${
                   isActive('/tutoring')
-                    ? 'border-blue-500 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
+                    ? 'border-blue-500 text-gray-900 dark:text-gray-100'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-200'
+                } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors`}
               >
                 家教專區
               </Link>
@@ -80,9 +81,9 @@ export default function Navbar() {
                 href="/library"
                 className={`${
                   isActive('/library')
-                    ? 'border-blue-500 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
+                    ? 'border-blue-500 text-gray-900 dark:text-gray-100'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-200'
+                } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors`}
               >
                 題目與筆記
               </Link>
@@ -90,9 +91,9 @@ export default function Navbar() {
                 href="/chat"
                 className={`${
                   isActive('/chat')
-                    ? 'border-blue-500 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium relative`}
+                    ? 'border-blue-500 text-gray-900 dark:text-gray-100'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-200'
+                } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium relative transition-colors`}
               >
                 訊息
                 {unreadCount > 0 && (
@@ -106,30 +107,32 @@ export default function Navbar() {
           <div className="flex items-center">
             {session ? (
               <div className="flex items-center space-x-4">
+                <ThemeToggle />
                 <Link
                   href={`/profile/${session.user?.id}`}
-                  className="text-gray-700 hover:text-gray-900 text-sm font-medium"
+                  className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 text-sm font-medium transition-colors"
                 >
                   {session.user?.name || 'Profile'}
                 </Link>
                 <button
                   onClick={handleSignOut}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
+                  className="bg-blue-600 dark:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
                 >
                   登出
                 </button>
               </div>
             ) : (
               <div className="flex items-center space-x-4">
+                <ThemeToggle />
                 <Link
                   href="/login"
-                  className="text-gray-700 hover:text-gray-900 text-sm font-medium"
+                  className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 text-sm font-medium transition-colors"
                 >
                   登入
                 </Link>
                 <Link
                   href="/register"
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
+                  className="bg-blue-600 dark:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
                 >
                   註冊
                 </Link>

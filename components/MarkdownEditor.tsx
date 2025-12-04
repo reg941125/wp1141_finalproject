@@ -307,11 +307,11 @@ export default function MarkdownEditor({
   }, [latexInput.show]);
 
   return (
-    <div ref={containerRef} className={`border rounded-lg ${className}`}>
+    <div ref={containerRef} className={`border border-gray-300 dark:border-gray-600 rounded-lg ${className} transition-colors`}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[400px]">
         {/* 編輯區域 */}
-        <div className="border-r border-gray-200 pr-4">
-          <div className="text-sm font-semibold text-gray-700 mb-2">編輯</div>
+        <div className="border-r border-gray-200 dark:border-gray-700 pr-4">
+          <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">編輯</div>
           <div className="relative">
             <textarea
               ref={textareaRef}
@@ -319,7 +319,7 @@ export default function MarkdownEditor({
               onChange={handleTextChange}
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
-              className="w-full p-4 min-h-[400px] resize-none focus:outline-none border border-gray-300 rounded-md font-mono text-sm"
+              className="w-full p-4 min-h-[400px] resize-none focus:outline-none border border-gray-300 dark:border-gray-600 rounded-md font-mono text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 transition-colors"
               style={{
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-word',
@@ -351,15 +351,15 @@ export default function MarkdownEditor({
         {/* 預覽區域 */}
         {showPreview && (
           <div className="pl-4">
-            <div className="text-sm font-semibold text-gray-700 mb-2">預覽</div>
+            <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">預覽</div>
             <div
               ref={previewRef}
-              className="p-4 min-h-[400px] border border-gray-300 rounded-md overflow-auto bg-white"
+              className="p-4 min-h-[400px] border border-gray-300 dark:border-gray-600 rounded-md overflow-auto bg-white dark:bg-gray-800 transition-colors"
             >
               {value ? (
                 <MarkdownRenderer content={value} />
               ) : (
-                <span className="text-gray-400">{placeholder}</span>
+                <span className="text-gray-400 dark:text-gray-500">{placeholder}</span>
               )}
             </div>
           </div>

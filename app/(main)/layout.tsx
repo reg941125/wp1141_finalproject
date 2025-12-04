@@ -9,7 +9,7 @@ function MainContent({ children }: { children: React.ReactNode }) {
   const isProfilePage = pathname?.startsWith('/profile');
   
   return (
-    <main className={`min-h-screen ${isProfilePage ? 'bg-white' : 'bg-gray-50'}`}>
+    <main className={`min-h-screen transition-colors ${isProfilePage ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-950'}`}>
       {children}
     </main>
   );

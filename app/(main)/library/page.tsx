@@ -42,12 +42,12 @@ export default function LibraryPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">題目與筆記專區</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">題目與筆記專區</h1>
         {session && (
           <div className="flex space-x-4">
             <Link
               href="/library/upload"
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+              className="bg-blue-600 dark:bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
             >
               上傳題目
             </Link>
@@ -59,7 +59,7 @@ export default function LibraryPage() {
         <div className="mb-6">
           <Link
             href="/library/my-files"
-            className="text-blue-600 hover:text-blue-800"
+            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
           >
             查看我的題目 →
           </Link>
@@ -67,9 +67,9 @@ export default function LibraryPage() {
       )}
 
       {loading ? (
-        <div className="text-center py-12">載入中...</div>
+        <div className="text-center py-12 text-gray-900 dark:text-white">載入中...</div>
       ) : files.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-12 text-gray-600 dark:text-gray-400">
           尚無題目檔案
         </div>
       ) : (
@@ -78,15 +78,15 @@ export default function LibraryPage() {
             <Link
               key={file._id}
               href={`/library/edit/${file._id}`}
-              className="block bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
+              className="block bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 p-6 hover:shadow-lg dark:hover:shadow-gray-900/70 transition-shadow"
             >
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                 {file.name}
               </h2>
-              <p className="text-gray-600 mb-4 line-clamp-2">
+              <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-2">
                 {file.description}
               </p>
-              <div className="flex items-center justify-between text-sm text-gray-500">
+              <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
                 <span>{file.authorId?.name || '匿名'}</span>
                 <span>{new Date(file.createdAt).toLocaleDateString('zh-TW')}</span>
               </div>

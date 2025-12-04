@@ -34,21 +34,21 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
           p: ({ node, ...props }) => <p className="mb-2" {...props} />,
           h1: ({ node, ...props }) => (
             <h1 
-              className="mb-2 mt-4 font-bold text-gray-900" 
+              className="mb-2 mt-4 font-bold text-gray-900 dark:text-gray-100" 
               style={{ fontSize: '2em', lineHeight: '1.2', fontWeight: 700 }}
               {...props} 
             />
           ),
           h2: ({ node, ...props }) => (
             <h2 
-              className="mb-2 mt-4 font-semibold text-gray-900" 
+              className="mb-2 mt-4 font-semibold text-gray-900 dark:text-gray-100" 
               style={{ fontSize: '1.5em', lineHeight: '1.3', fontWeight: 600 }}
               {...props} 
             />
           ),
           h3: ({ node, ...props }) => (
             <h3 
-              className="mb-2 mt-3 font-semibold text-gray-900" 
+              className="mb-2 mt-3 font-semibold text-gray-900 dark:text-gray-100" 
               style={{ fontSize: '1.25em', lineHeight: '1.4', fontWeight: 600 }}
               {...props} 
             />
@@ -58,11 +58,11 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
           li: ({ node, ...props }) => <li className="mb-1" {...props} />,
           code: ({ node, inline, ...props }: any) => {
             if (inline) {
-              return <code className="bg-gray-100 px-1 py-0.5 rounded text-sm" {...props} />;
+              return <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-sm text-gray-900 dark:text-gray-100" {...props} />;
             }
-            return <code className="block bg-gray-100 p-2 rounded text-sm overflow-x-auto" {...props} />;
+            return <code className="block bg-gray-100 dark:bg-gray-800 p-2 rounded text-sm overflow-x-auto text-gray-900 dark:text-gray-100" {...props} />;
           },
-          pre: ({ node, ...props }) => <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto mb-2" {...props} />,
+          pre: ({ node, ...props }) => <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto mb-2" {...props} />,
         }}
       >
         {processedContent}
@@ -79,11 +79,17 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
           color: #3b82f6;
           text-decoration: underline;
         }
+        .dark .prose a {
+          color: #60a5fa;
+        }
         .prose code {
           background-color: rgba(0, 0, 0, 0.1);
           padding: 0.2em 0.4em;
           border-radius: 0.25rem;
           font-size: 0.9em;
+        }
+        .dark .prose code {
+          background-color: rgba(255, 255, 255, 0.1);
         }
         .prose pre {
           background-color: rgba(0, 0, 0, 0.05);
@@ -92,6 +98,9 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
           overflow-x: auto;
           margin-top: 0.5em;
           margin-bottom: 0.5em;
+        }
+        .dark .prose pre {
+          background-color: rgba(255, 255, 255, 0.05);
         }
         .prose pre code {
           background-color: transparent;

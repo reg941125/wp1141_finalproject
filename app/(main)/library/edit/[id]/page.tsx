@@ -96,43 +96,43 @@ export default function EditQuestionPage() {
   };
 
   if (loading) {
-    return <div className="max-w-4xl mx-auto px-4 py-8">載入中...</div>;
+    return <div className="max-w-4xl mx-auto px-4 py-8 text-gray-900 dark:text-white">載入中...</div>;
   }
 
   if (!file) {
-    return <div className="max-w-4xl mx-auto px-4 py-8">題目不存在</div>;
+    return <div className="max-w-4xl mx-auto px-4 py-8 text-gray-900 dark:text-white">題目不存在</div>;
   }
 
   if (session?.user?.id !== file.authorId._id.toString()) {
-    return <div className="max-w-4xl mx-auto px-4 py-8">無權限編輯此題目</div>;
+    return <div className="max-w-4xl mx-auto px-4 py-8 text-gray-900 dark:text-white">無權限編輯此題目</div>;
   }
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">{file.name}</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{file.name}</h1>
         <div className="flex space-x-4">
           <button
             onClick={handleExportPDF}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+            className="px-4 py-2 bg-green-600 dark:bg-green-700 text-white rounded-md hover:bg-green-700 dark:hover:bg-green-600 transition-colors"
           >
             匯出 PDF
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+            className="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 transition-colors"
           >
             {saving ? '儲存中...' : '儲存'}
           </button>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <p className="text-gray-600 mb-4">{file.description}</p>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 p-6 mb-6 transition-colors">
+        <p className="text-gray-600 dark:text-gray-300 mb-4">{file.description}</p>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6 mb-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 p-6 mb-4 transition-colors">
         <div className="mb-4">
           <label className="flex items-center">
             <input
@@ -141,7 +141,7 @@ export default function EditQuestionPage() {
               onChange={(e) => setShowOnProfile(e.target.checked)}
               className="mr-2"
             />
-            <span className="text-sm text-gray-700">顯示在個人檔案上</span>
+            <span className="text-sm text-gray-900 dark:text-white">顯示在個人檔案上</span>
           </label>
         </div>
         <MarkdownEditor

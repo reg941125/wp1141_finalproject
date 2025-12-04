@@ -59,30 +59,30 @@ export default function JobPostingDetailPage() {
   };
 
   if (loading) {
-    return <div className="max-w-4xl mx-auto px-4 py-8">載入中...</div>;
+    return <div className="max-w-4xl mx-auto px-4 py-8 text-gray-900 dark:text-white">載入中...</div>;
   }
 
   if (!posting) {
-    return <div className="max-w-4xl mx-auto px-4 py-8">徵人訊息不存在</div>;
+    return <div className="max-w-4xl mx-auto px-4 py-8 text-gray-900 dark:text-white">徵人訊息不存在</div>;
   }
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 p-6 mb-6 transition-colors">
         <div className="flex justify-between items-start mb-4">
-          <h1 className="text-3xl font-bold text-gray-900">{posting.title}</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{posting.title}</h1>
           <span
             className={`px-3 py-1 rounded-full text-sm ${
               posting.type === 'seeking_tutor'
-                ? 'bg-green-100 text-green-800'
-                : 'bg-blue-100 text-blue-800'
+                ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                : 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
             }`}
           >
             {posting.type === 'seeking_tutor' ? '徵家教' : '徵學生'}
           </span>
         </div>
 
-        <div className="flex items-center space-x-4 mb-4 text-sm text-gray-500">
+        <div className="flex items-center space-x-4 mb-4 text-sm text-gray-500 dark:text-gray-400">
           <span>發布者: {posting.authorId?.name || '匿名'}</span>
           <span>發布時間: {new Date(posting.createdAt).toLocaleDateString('zh-TW')}</span>
         </div>
@@ -91,7 +91,7 @@ export default function JobPostingDetailPage() {
           {posting.tags.map((tag) => (
             <span
               key={tag}
-              className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm"
+              className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded text-sm"
             >
               {tag}
             </span>
@@ -100,12 +100,12 @@ export default function JobPostingDetailPage() {
 
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div>
-            <span className="text-sm font-medium text-gray-700">教育程度:</span>
-            <span className="ml-2">{educationLevelMap[posting.educationLevel]}</span>
+            <span className="text-sm font-medium text-gray-900 dark:text-white">教育程度:</span>
+            <span className="ml-2 text-gray-700 dark:text-gray-300">{educationLevelMap[posting.educationLevel]}</span>
           </div>
           <div>
-            <span className="text-sm font-medium text-gray-700">時薪:</span>
-            <span className="ml-2">
+            <span className="text-sm font-medium text-gray-900 dark:text-white">時薪:</span>
+            <span className="ml-2 text-gray-700 dark:text-gray-300">
               ${posting.hourlyRate.min}
               {posting.hourlyRate.max ? ` - $${posting.hourlyRate.max}` : ''}
             </span>
@@ -113,13 +113,13 @@ export default function JobPostingDetailPage() {
         </div>
 
         <div className="mb-6">
-          <h2 className="text-xl font-semibold mb-2">描述</h2>
-          <p className="text-gray-700 whitespace-pre-wrap">{posting.description}</p>
+          <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">描述</h2>
+          <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{posting.description}</p>
         </div>
 
         <div>
-          <h2 className="text-xl font-semibold mb-2">詳細要求</h2>
-          <p className="text-gray-700 whitespace-pre-wrap">{posting.requirements}</p>
+          <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">詳細要求</h2>
+          <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{posting.requirements}</p>
         </div>
       </div>
 
@@ -141,14 +141,14 @@ export default function JobPostingDetailPage() {
                 console.error('Error creating conversation:', error);
               }
             }}
-            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
+            className="bg-green-600 dark:bg-green-700 text-white px-4 py-2 rounded-md hover:bg-green-700 dark:hover:bg-green-600 transition-colors"
           >
             私訊發布者
           </button>
         )}
         <Link
           href={`/profile/${posting.authorId._id}`}
-          className="text-blue-600 hover:text-blue-800"
+          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
         >
           查看發布者檔案 →
         </Link>
