@@ -67,3 +67,24 @@ export interface QuestionFile {
   updatedAt: Date;
 }
 
+export interface Conversation {
+  _id: Types.ObjectId;
+  participants: Types.ObjectId[];
+  lastMessage?: string;
+  lastMessageAt?: Date;
+  lastMessageBy?: Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Message {
+  _id: Types.ObjectId;
+  conversationId: Types.ObjectId;
+  senderId: Types.ObjectId;
+  content: string;
+  read: boolean;
+  readAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+

@@ -42,7 +42,7 @@ export default function LibraryPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">題目與考古專區</h1>
+        <h1 className="text-3xl font-bold text-gray-900">題目與筆記專區</h1>
         {session && (
           <div className="flex space-x-4">
             <Link

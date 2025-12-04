@@ -3,11 +3,13 @@
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function Navbar() {
   const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const handleSignOut = async () => {
     await signOut({ redirect: false });
@@ -20,6 +22,28 @@ export default function Navbar() {
     }
     return pathname?.startsWith(path);
   };
+
+  useEffect(() => {
+    if (!session) return;
+
+    const fetchUnreadCount = async () => {
+      try {
+        const response = await fetch('/api/conversations/unread');
+        if (response.ok) {
+          const data = await response.json();
+          setUnreadCount(data.total || 0);
+        }
+      } catch (error) {
+        console.error('Error fetching unread count:', error);
+      }
+    };
+
+    fetchUnreadCount();
+    
+    // Poll for unread messages every 10 seconds
+    const interval = setInterval(fetchUnreadCount, 10000);
+    return () => clearInterval(interval);
+  }, [session]);
 
   return (
     <nav className="bg-white shadow-lg">
@@ -60,7 +84,22 @@ export default function Navbar() {
                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                 } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
               >
-                題目與考古
+                題目與筆記
+              </Link>
+              <Link
+                href="/chat"
+                className={`${
+                  isActive('/chat')
+                    ? 'border-blue-500 text-gray-900'
+                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium relative`}
+              >
+                訊息
+                {unreadCount > 0 && (
+                  <span className="ml-2 bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5 min-w-[20px] text-center">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
               </Link>
             </div>
           </div>

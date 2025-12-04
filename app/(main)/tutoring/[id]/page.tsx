@@ -123,7 +123,29 @@ export default function JobPostingDetailPage() {
         </div>
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-end space-x-4">
+        {session && session.user.id !== posting.authorId._id && (
+          <button
+            onClick={async () => {
+              try {
+                const response = await fetch('/api/conversations', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ otherUserId: posting.authorId._id }),
+                });
+                if (response.ok) {
+                  const conversation = await response.json();
+                  window.location.href = `/chat/${conversation._id}`;
+                }
+              } catch (error) {
+                console.error('Error creating conversation:', error);
+              }
+            }}
+            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
+          >
+            私訊發布者
+          </button>
+        )}
         <Link
           href={`/profile/${posting.authorId._id}`}
           className="text-blue-600 hover:text-blue-800"
