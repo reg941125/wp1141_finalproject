@@ -161,7 +161,7 @@ export default function ChatPage() {
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="text-center py-12">載入中...</div>
+        <div className="text-center py-12 text-gray-900 dark:text-white">載入中...</div>
       </div>
     );
   }
@@ -170,12 +170,12 @@ export default function ChatPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="bg-white rounded-lg shadow flex flex-col" style={{ height: 'calc(100vh - 200px)' }}>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 flex flex-col transition-colors" style={{ height: 'calc(100vh - 200px)' }}>
         {/* Header */}
-        <div className="border-b px-6 py-4 flex items-center space-x-4">
+        <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center space-x-4">
           <button
             onClick={() => router.push('/chat')}
-            className="text-gray-500 hover:text-gray-700 mr-4"
+            className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 mr-4 transition-colors"
           >
             ← 返回
           </button>
@@ -186,14 +186,14 @@ export default function ChatPage() {
               className="w-10 h-10 rounded-full"
             />
           ) : (
-            <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
-              <span className="text-gray-600">
+            <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+              <span className="text-gray-600 dark:text-gray-300">
                 {otherUser?.name.charAt(0).toUpperCase()}
               </span>
             </div>
           )}
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
               {otherUser?.name || '未知用戶'}
             </h2>
           </div>
@@ -202,10 +202,10 @@ export default function ChatPage() {
         {/* Messages */}
         <div
           ref={messagesContainerRef}
-          className="flex-1 overflow-y-auto p-6 space-y-4"
+          className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50 dark:bg-gray-900"
         >
           {messages.length === 0 ? (
-            <div className="text-center text-gray-500 py-12">
+            <div className="text-center text-gray-500 dark:text-gray-400 py-12">
               尚無訊息，開始對話吧！
             </div>
           ) : (
@@ -219,8 +219,8 @@ export default function ChatPage() {
                   <div
                     className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                       isMe
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-200 text-gray-900'
+                        ? 'bg-blue-600 dark:bg-blue-700 text-white'
+                        : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white'
                     }`}
                   >
                     {!isMe && (
@@ -233,7 +233,7 @@ export default function ChatPage() {
                     </p>
                     <p
                       className={`text-xs mt-1 ${
-                        isMe ? 'text-blue-100' : 'text-gray-500'
+                        isMe ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
                       }`}
                     >
                       {new Date(message.createdAt).toLocaleTimeString('zh-TW', {
@@ -252,20 +252,20 @@ export default function ChatPage() {
         {/* Input */}
         <form
           onSubmit={handleSendMessage}
-          className="border-t px-6 py-4 flex items-center space-x-4"
+          className="border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center space-x-4"
         >
           <input
             type="text"
             value={messageContent}
             onChange={(e) => setMessageContent(e.target.value)}
             placeholder="輸入訊息..."
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors"
             disabled={sending}
           />
           <button
             type="submit"
             disabled={!messageContent.trim() || sending}
-            className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-blue-600 dark:bg-blue-700 text-white px-6 py-2 rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {sending ? '發送中...' : '發送'}
           </button>

@@ -81,21 +81,21 @@ export default function ChatListPage() {
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="text-center py-12">載入中...</div>
+        <div className="text-center py-12 text-gray-900 dark:text-white">載入中...</div>
       </div>
     );
   }
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">訊息</h1>
+      <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">訊息</h1>
 
       {conversations.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
           尚無對話記錄
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow divide-y">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 divide-y divide-gray-200 dark:divide-gray-700 transition-colors">
           {conversations.map((conversation) => {
             const otherUser = getOtherParticipant(conversation);
             if (!otherUser) return null;
@@ -107,7 +107,7 @@ export default function ChatListPage() {
               <Link
                 key={conversation._id}
                 href={`/chat/${conversation._id}`}
-                className="block p-4 hover:bg-gray-50 transition-colors"
+                className="block p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 <div className="flex items-center space-x-4">
                   <div className="flex-shrink-0">
@@ -118,8 +118,8 @@ export default function ChatListPage() {
                         className="w-12 h-12 rounded-full"
                       />
                     ) : (
-                      <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">
-                        <span className="text-gray-600 text-lg">
+                      <div className="w-12 h-12 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+                        <span className="text-gray-600 dark:text-gray-300 text-lg">
                           {otherUser.name.charAt(0).toUpperCase()}
                         </span>
                       </div>
@@ -128,7 +128,7 @@ export default function ChatListPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <p className="text-sm font-medium text-gray-900 truncate">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                           {otherUser.name}
                         </p>
                         {unreadMap[conversation._id] > 0 && (
@@ -138,7 +138,7 @@ export default function ChatListPage() {
                         )}
                       </div>
                       {conversation.lastMessageAt && (
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                           {new Date(conversation.lastMessageAt).toLocaleDateString(
                             'zh-TW',
                             {
@@ -154,7 +154,7 @@ export default function ChatListPage() {
                     {conversation.lastMessage && (
                       <p
                         className={`text-sm truncate ${
-                          isLastMessageByMe ? 'text-gray-500' : 'text-gray-700 font-medium'
+                          isLastMessageByMe ? 'text-gray-500 dark:text-gray-400' : 'text-gray-700 dark:text-gray-300 font-medium'
                         }`}
                       >
                         {isLastMessageByMe && '你: '}
