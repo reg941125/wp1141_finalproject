@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import dbConnect from '@/lib/db';
 import ConversationModel from '@/lib/models/Conversation';
 import MessageModel from '@/lib/models/Message';
+import mongoose from 'mongoose';
 
 export async function GET(
   request: Request,
@@ -32,10 +33,11 @@ export async function GET(
       .sort({ createdAt: 1 });
 
     // Mark messages as read
+    const userObjectId = new mongoose.Types.ObjectId(session.user.id);
     await MessageModel.updateMany(
       {
         conversationId: params.id,
-        senderId: { $ne: session.user.id },
+        senderId: { $ne: userObjectId },
         read: false,
       },
       {

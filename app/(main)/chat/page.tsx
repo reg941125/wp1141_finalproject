@@ -24,27 +24,35 @@ interface Conversation {
 }
 
 export default function ChatListPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [unreadMap, setUnreadMap] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    if (!session) {
+    // 如果未登入，立即清除所有數據並重定向
+    if (status === 'unauthenticated') {
+      setConversations([]);
+      setUnreadMap({});
+      setLoading(false);
       router.push('/login');
       return;
     }
-    fetchConversations();
-    fetchUnreadCounts();
     
-    // Poll for new messages every 5 seconds
-    const interval = setInterval(() => {
+    // 只有在已登入時才載入數據
+    if (status === 'authenticated' && session) {
       fetchConversations();
       fetchUnreadCounts();
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [session]);
+      
+      // Poll for new messages every 5 seconds
+      const interval = setInterval(() => {
+        fetchConversations();
+        fetchUnreadCounts();
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [session, status, router]);
 
   const fetchConversations = async () => {
     try {
@@ -78,6 +86,17 @@ export default function ChatListPage() {
       (p) => p._id !== session.user?.id
     );
   };
+
+  // 在檢查 session 時不顯示任何內容
+  if (status === 'loading' || status === 'unauthenticated') {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="text-center py-12 text-gray-900 dark:text-white">
+          {status === 'loading' ? '載入中...' : '重定向中...'}
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

@@ -15,6 +15,8 @@ interface Message {
   };
   content: string;
   createdAt: string;
+  read: boolean;
+  readAt?: string;
 }
 
 interface Conversation {
@@ -30,7 +32,7 @@ interface Conversation {
 export default function ChatPage() {
   const params = useParams();
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [messageContent, setMessageContent] = useState('');
@@ -40,53 +42,61 @@ export default function ChatPage() {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!session) {
+    // 如果未登入，立即清除所有數據並重定向
+    if (status === 'unauthenticated') {
+      setMessages([]);
+      setConversation(null);
+      setMessageContent('');
+      setLoading(false);
       router.push('/login');
       return;
     }
     
-    // Request notification permission
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
-    
-    fetchMessages();
-    
-    // Poll for new messages every 2 seconds
-    let previousMessageIds = new Set<string>();
-    const interval = setInterval(async () => {
-      try {
-        const response = await fetch(`/api/conversations/${params.id}/messages`);
-        if (response.ok) {
-          const data = await response.json();
-          
-          // Check for new messages
-          if (previousMessageIds.size > 0 && document.hidden) {
-            const newMessages = data.filter((msg: Message) => 
-              !previousMessageIds.has(msg._id) && msg.senderId._id !== session?.user?.id
-            );
-            
-            if (newMessages.length > 0 && 'Notification' in window && Notification.permission === 'granted') {
-              newMessages.forEach((msg: Message) => {
-                new Notification(`${msg.senderId.name} 發送了一則訊息`, {
-                  body: msg.content.length > 50 ? msg.content.substring(0, 50) + '...' : msg.content,
-                  icon: msg.senderId.image || undefined,
-                  tag: `message-${msg._id}`,
-                });
-              });
-            }
-          }
-          
-          // Update previous message IDs
-          previousMessageIds = new Set(data.map((msg: Message) => msg._id));
-          setMessages(data);
-        }
-      } catch (error) {
-        console.error('Error polling messages:', error);
+    // 只有在已登入時才載入數據
+    if (status === 'authenticated' && session) {
+      // Request notification permission
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
       }
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [params.id, session]);
+      
+      fetchMessages();
+      
+      // Poll for new messages every 2 seconds
+      let previousMessageIds = new Set<string>();
+      const interval = setInterval(async () => {
+        try {
+          const response = await fetch(`/api/conversations/${params.id}/messages`);
+          if (response.ok) {
+            const data = await response.json();
+            
+            // Check for new messages
+            if (previousMessageIds.size > 0 && document.hidden) {
+              const newMessages = data.filter((msg: Message) => 
+                !previousMessageIds.has(msg._id) && msg.senderId._id !== session?.user?.id
+              );
+              
+              if (newMessages.length > 0 && 'Notification' in window && Notification.permission === 'granted') {
+                newMessages.forEach((msg: Message) => {
+                  new Notification(`${msg.senderId.name} 發送了一則訊息`, {
+                    body: msg.content.length > 50 ? msg.content.substring(0, 50) + '...' : msg.content,
+                    icon: msg.senderId.image || undefined,
+                    tag: `message-${msg._id}`,
+                  });
+                });
+              }
+            }
+            
+            // Update previous message IDs
+            previousMessageIds = new Set(data.map((msg: Message) => msg._id));
+            setMessages(data);
+          }
+        } catch (error) {
+          console.error('Error polling messages:', error);
+        }
+      }, 2000);
+      return () => clearInterval(interval);
+    }
+  }, [params.id, session, status, router]);
 
   const scrollToBottom = (smooth: boolean = true) => {
     messagesEndRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' });
@@ -157,6 +167,17 @@ export default function ChatPage() {
       (p) => p._id !== session.user?.id
     );
   };
+
+  // 在檢查 session 時不顯示任何內容
+  if (status === 'loading' || status === 'unauthenticated') {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="text-center py-12 text-gray-900 dark:text-white">
+          {status === 'loading' ? '載入中...' : '重定向中...'}
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -239,16 +260,27 @@ export default function ChatPage() {
                     <p className="text-sm whitespace-pre-wrap">
                       {message.content}
                     </p>
-                    <p
-                      className={`text-xs mt-1 ${
-                        isMe ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
-                      }`}
-                    >
-                      {new Date(message.createdAt).toLocaleTimeString('zh-TW', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </p>
+                    <div className="flex items-center justify-end mt-1 space-x-2">
+                      <p
+                        className={`text-xs ${
+                          isMe ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
+                        }`}
+                      >
+                        {new Date(message.createdAt).toLocaleTimeString('zh-TW', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                      {isMe && (
+                        <span
+                          className={`text-xs ${
+                            isMe ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
+                          }`}
+                        >
+                          {message.read ? '✓✓' : '✓'}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               );

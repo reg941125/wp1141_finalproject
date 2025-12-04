@@ -7,15 +7,28 @@ import MarkdownEditor from '@/components/MarkdownEditor';
 
 export default function NewQuestionPage() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [tags, setTags] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  if (!session) {
+  // 在檢查 session 時不顯示任何內容
+  if (status === 'loading') {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8 text-gray-900 dark:text-white">
+        載入中...
+      </div>
+    );
+  }
+
+  if (status === 'unauthenticated') {
     router.push('/login');
-    return null;
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8 text-gray-900 dark:text-white">
+        重定向中...
+      </div>
+    );
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

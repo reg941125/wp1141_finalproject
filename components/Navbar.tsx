@@ -13,8 +13,13 @@ export default function Navbar() {
   const [unreadCount, setUnreadCount] = useState(0);
 
   const handleSignOut = async () => {
-    await signOut({ redirect: false });
-    router.push('/login');
+    // 立即清除未讀數量，避免顯示舊數據
+    setUnreadCount(0);
+    // 登出並重定向到登入頁
+    await signOut({ 
+      redirect: true,
+      callbackUrl: '/login'
+    });
   };
 
   const isActive = (path: string) => {

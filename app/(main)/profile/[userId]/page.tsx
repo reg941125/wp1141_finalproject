@@ -96,11 +96,11 @@ export default function ProfilePage() {
   };
 
   if (loading) {
-    return <div className="max-w-4xl mx-auto px-4 py-8">載入中...</div>;
+    return <div className="max-w-4xl mx-auto px-4 py-8 text-gray-900 dark:text-white">載入中...</div>;
   }
 
   if (!user) {
-    return <div className="max-w-4xl mx-auto px-4 py-8">用戶不存在</div>;
+    return <div className="max-w-4xl mx-auto px-4 py-8 text-gray-900 dark:text-white">用戶不存在</div>;
   }
 
   const isOwnProfile = session?.user?.id === params.userId || session?.user?.id === user._id;
@@ -117,32 +117,41 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto bg-white min-h-screen">
+    <div className="max-w-4xl mx-auto bg-white dark:bg-gray-900 min-h-screen transition-colors">
       {/* Banner/Header Area */}
-      <div className="h-48 bg-gray-200 w-full relative">
+      <div className="h-48 bg-gray-200 dark:bg-gray-700 w-full relative">
         {user.bannerImage && (
           <Image
             src={user.bannerImage}
             alt="Banner"
             fill
             className="object-cover"
+            unoptimized
           />
         )}
       </div>
       
       {/* Profile Section */}
-      <div className="px-4 pb-4 border-b border-gray-200">
+      <div className="px-4 pb-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex justify-between items-start">
           {/* Profile Picture - overlapping banner */}
           <div className="relative -mt-20 mb-4">
             {user.image ? (
-              <img
-                src={user.image}
-                alt={user.name}
-                className="w-32 h-32 rounded-full border-4 border-white"
-              />
+              <div className="w-32 h-32 rounded-full border-4 border-white dark:border-gray-900 bg-gray-300 dark:bg-gray-600 overflow-hidden">
+                <Image
+                  src={user.image}
+                  alt={user.name}
+                  width={128}
+                  height={128}
+                  className="rounded-full object-cover"
+                  unoptimized
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              </div>
             ) : (
-              <div className="w-32 h-32 rounded-full border-4 border-white bg-pink-500 flex items-center justify-center">
+              <div className="w-32 h-32 rounded-full border-4 border-white dark:border-gray-900 bg-pink-500 dark:bg-pink-600 flex items-center justify-center">
                 <span className="text-white text-3xl font-bold">
                   {getInitials(user.name)}
                 </span>
@@ -154,7 +163,7 @@ export default function ProfilePage() {
           {isOwnProfile && (
             <Link
               href="/profile/edit"
-              className="mt-4 px-4 py-2 border border-gray-300 rounded-full text-sm font-semibold hover:bg-gray-50 transition-colors"
+              className="mt-4 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-full text-sm font-semibold text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
               編輯個人檔案
             </Link>
@@ -163,27 +172,27 @@ export default function ProfilePage() {
 
         {/* User Info */}
         <div className="mt-4">
-          <h1 className="text-2xl font-bold text-gray-900">{user.name}</h1>
-          <p className="text-gray-500 text-sm mt-1">{handle}</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{user.name}</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{handle}</p>
           
           {/* Bio */}
           <div className="mt-4">
             {user.bio ? (
-              <p className="text-gray-900 whitespace-pre-wrap">{user.bio}</p>
+              <p className="text-gray-900 dark:text-white whitespace-pre-wrap">{user.bio}</p>
             ) : (
-              <p className="text-gray-500">No bio yet.</p>
+              <p className="text-gray-500 dark:text-gray-400">No bio yet.</p>
             )}
           </div>
 
           {/* Following/Followers */}
           <div className="flex space-x-4 mt-4">
-            <span className="text-gray-900">
+            <span className="text-gray-900 dark:text-white">
               <span className="font-semibold">{followingCount}</span>{' '}
-              <span className="text-gray-500">Following</span>
+              <span className="text-gray-500 dark:text-gray-400">Following</span>
             </span>
-            <span className="text-gray-900">
+            <span className="text-gray-900 dark:text-white">
               <span className="font-semibold">{followersCount}</span>{' '}
-              <span className="text-gray-500">Followers</span>
+              <span className="text-gray-500 dark:text-gray-400">Followers</span>
             </span>
           </div>
         </div>
@@ -191,9 +200,9 @@ export default function ProfilePage() {
 
       {/* Teaching Experience */}
       {user.teachingExperience && (
-        <div className="px-4 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold mb-2 text-gray-900">教學經歷</h2>
-          <div className="prose max-w-none text-gray-900">
+        <div className="px-4 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">教學經歷</h2>
+          <div className="prose max-w-none text-gray-900 dark:text-white">
             <MarkdownRenderer content={user.teachingExperience} />
           </div>
         </div>
@@ -201,17 +210,17 @@ export default function ProfilePage() {
 
       {/* Question Files */}
       {questionFiles.length > 0 && (
-        <div className="px-4 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold mb-4 text-gray-900">題目與考卷</h2>
+        <div className="px-4 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">題目與考卷</h2>
           <div className="space-y-3">
             {questionFiles.map((file) => (
               <Link
                 key={file._id}
                 href={`/library/edit/${file._id}`}
-                className="block p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                className="block p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
-                <h3 className="font-semibold text-gray-900 mb-1">{file.name}</h3>
-                <p className="text-sm text-gray-600 line-clamp-2">{file.description}</p>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{file.name}</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">{file.description}</p>
               </Link>
             ))}
           </div>
@@ -220,31 +229,31 @@ export default function ProfilePage() {
 
       {/* Job Postings */}
       {jobPostings.length > 0 && (
-        <div className="px-4 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold mb-4 text-gray-900">徵人訊息</h2>
+        <div className="px-4 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">徵人訊息</h2>
           <div className="space-y-3">
             {jobPostings.map((posting) => (
               <Link
                 key={posting._id}
                 href={`/tutoring/${posting._id}`}
-                className="block p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                className="block p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold text-gray-900">{posting.title}</h3>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">{posting.title}</h3>
                   <span
                     className={`px-2 py-1 rounded text-xs ${
                       posting.type === 'seeking_tutor'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-blue-100 text-blue-800'
+                        ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                        : 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
                     }`}
                   >
                     {posting.type === 'seeking_tutor' ? '徵家教' : '徵學生'}
                   </span>
                 </div>
-                <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                <p className="text-sm text-gray-600 dark:text-gray-300 mb-2 line-clamp-2">
                   {posting.description}
                 </p>
-                <div className="flex items-center space-x-4 text-xs text-gray-500">
+                <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
                   <span>{educationLevelMap[posting.educationLevel as keyof typeof educationLevelMap]}</span>
                   <span>
                     時薪: ${posting.hourlyRate.min}
@@ -259,7 +268,7 @@ export default function ProfilePage() {
 
       {/* Empty State */}
       {questionFiles.length === 0 && jobPostings.length === 0 && !user.teachingExperience && (
-        <div className="px-4 py-8 text-center text-gray-500">
+        <div className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
           <p>尚無內容</p>
         </div>
       )}
