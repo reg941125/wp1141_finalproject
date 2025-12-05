@@ -22,15 +22,21 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         remarkPlugins={[remarkMath, remarkGfm]}
         rehypePlugins={[[rehypeKatex, { throwOnError: false }]]}
         components={{
-          img: ({ node, ...props }) => (
-            <Image
-              {...props}
-              alt={props.alt || ''}
-              width={800}
-              height={600}
-              className="rounded-lg"
-            />
-          ),
+          img: ({ node, ...props }: any) => {
+            if (!props.src) {
+              return <img {...props} alt={props.alt || ''} className="rounded-lg" />;
+            }
+            return (
+              <Image
+                src={props.src}
+                alt={props.alt || ''}
+                width={800}
+                height={600}
+                className="rounded-lg"
+                unoptimized
+              />
+            );
+          },
           p: ({ node, ...props }) => <p className="py-1 text-sm" {...props} />,
           h1: ({ node, ...props }) => (
             <h1 
