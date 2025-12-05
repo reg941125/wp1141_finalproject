@@ -3,35 +3,6 @@
 import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 
-interface Message {
-  _id: string;
-  senderId: {
-    _id: string;
-    name: string;
-    image?: string;
-    username?: string;
-  };
-  content: string;
-  createdAt: string;
-  read: boolean;
-  readAt?: string;
-}
-
-interface Conversation {
-  _id: string;
-  participants: Array<{
-    _id: string;
-    name: string;
-    image?: string;
-    username?: string;
-  }>;
-}
-
-'use client';
-
-import { useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-
 export default function ChatRedirectPage() {
   const params = useParams();
   const router = useRouter();
@@ -47,4 +18,3 @@ export default function ChatRedirectPage() {
     </div>
   );
 }
-
