@@ -161,7 +161,7 @@ export default function SlashCommandMenu({
         ))}
       </div>
       <div className="p-2 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
-        <span>Type '/' on the page</span>
+        <span>Type &apos;/&apos; on the page</span>
         <span>esc</span>
       </div>
     </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
@@ -39,13 +39,7 @@ export default function JobPostingDetailPage() {
   const [loading, setLoading] = useState(true);
   const [creatingConversation, setCreatingConversation] = useState(false);
 
-  useEffect(() => {
-    if (params.id) {
-      fetchPosting();
-    }
-  }, [params.id]);
-
-  const fetchPosting = async () => {
+  const fetchPosting = useCallback(async () => {
     try {
       const response = await fetch(`/api/jobs/${params.id}`);
       if (response.ok) {
@@ -57,7 +51,13 @@ export default function JobPostingDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
+
+  useEffect(() => {
+    if (params.id) {
+      fetchPosting();
+    }
+  }, [params.id, fetchPosting]);
 
   if (loading) {
     return <div className="max-w-4xl mx-auto px-4 py-8 text-gray-900 dark:text-white">載入中...</div>;

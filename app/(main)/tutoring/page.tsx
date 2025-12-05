@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import JobPostingDialog, { JobPostingData } from '@/components/JobPostingDialog';
@@ -42,11 +42,7 @@ export default function TutoringPage() {
   const [hourlyRateMax, setHourlyRateMax] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  useEffect(() => {
-    fetchPostings();
-  }, [typeFilter, tagFilter, educationFilter, hourlyRateMin, hourlyRateMax]);
-
-  const fetchPostings = async () => {
+  const fetchPostings = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       if (typeFilter !== 'all') params.append('type', typeFilter);
@@ -63,7 +59,11 @@ export default function TutoringPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [typeFilter, tagFilter, educationFilter, hourlyRateMin, hourlyRateMax]);
+
+  useEffect(() => {
+    fetchPostings();
+  }, [fetchPostings]);
 
   const handleSubmitPosting = async (data: JobPostingData) => {
     try {
