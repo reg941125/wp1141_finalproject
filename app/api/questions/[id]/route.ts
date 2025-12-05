@@ -3,6 +3,8 @@ import { auth } from '@/lib/auth';
 import dbConnect from '@/lib/db';
 import QuestionFileModel from '@/lib/models/QuestionFile';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }

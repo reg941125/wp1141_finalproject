@@ -4,6 +4,8 @@ import dbConnect from '@/lib/db';
 import ConversationModel from '@/lib/models/Conversation';
 import MessageModel from '@/lib/models/Message';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const session = await auth();

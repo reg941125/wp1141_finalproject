@@ -3,6 +3,8 @@ import { auth } from '@/lib/auth';
 import dbConnect from '@/lib/db';
 import JobPostingModel from '@/lib/models/JobPosting';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   try {
     await dbConnect();
