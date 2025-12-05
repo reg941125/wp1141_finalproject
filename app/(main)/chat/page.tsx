@@ -55,51 +55,6 @@ export default function ChatPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [firstUnreadMessageId, setFirstUnreadMessageId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login');
-      return;
-    }
-    
-    if (status === 'authenticated' && session) {
-      fetchConversations();
-      fetchUnreadCounts();
-      
-      const interval = setInterval(() => {
-        fetchConversations();
-        fetchUnreadCounts();
-        if (conversationId) {
-          fetchMessages(conversationId);
-        }
-      }, 2000);
-      return () => clearInterval(interval);
-    }
-  }, [session, status, router, conversationId, fetchConversations, fetchUnreadCounts, fetchMessages]);
-
-  useEffect(() => {
-    if (conversationId) {
-      const conv = conversations.find(c => c._id === conversationId);
-      if (conv) {
-        setSelectedConversation(conv);
-        fetchMessages(conversationId);
-      }
-    } else {
-      setSelectedConversation(null);
-      setMessages([]);
-    }
-  }, [conversationId, conversations, fetchMessages]);
-
-  useEffect(() => {
-    if (messages.length > 0 && messagesContainerRef.current) {
-      setTimeout(() => {
-        messagesContainerRef.current?.scrollTo({
-          top: messagesContainerRef.current.scrollHeight,
-          behavior: 'smooth'
-        });
-      }, 100);
-    }
-  }, [messages]);
-
   const fetchConversations = useCallback(async () => {
     try {
       const response = await fetch('/api/conversations');
@@ -154,11 +109,56 @@ export default function ChatPage() {
     }
   }, [session?.user?.id]);
 
-  const handleSelectConversation = (conversation: Conversation) => {
+  const handleSelectConversation = useCallback((conversation: Conversation) => {
     setSelectedConversation(conversation);
     router.push(`/chat?id=${conversation._id}`, { scroll: false });
     fetchMessages(conversation._id);
-  };
+  }, [router, fetchMessages]);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login');
+      return;
+    }
+    
+    if (status === 'authenticated' && session) {
+      fetchConversations();
+      fetchUnreadCounts();
+      
+      const interval = setInterval(() => {
+        fetchConversations();
+        fetchUnreadCounts();
+        if (conversationId) {
+          fetchMessages(conversationId);
+        }
+      }, 2000);
+      return () => clearInterval(interval);
+    }
+  }, [session, status, router, conversationId, fetchConversations, fetchUnreadCounts, fetchMessages]);
+
+  useEffect(() => {
+    if (conversationId) {
+      const conv = conversations.find(c => c._id === conversationId);
+      if (conv) {
+        setSelectedConversation(conv);
+        fetchMessages(conversationId);
+      }
+    } else {
+      setSelectedConversation(null);
+      setMessages([]);
+    }
+  }, [conversationId, conversations, fetchMessages]);
+
+  useEffect(() => {
+    if (messages.length > 0 && messagesContainerRef.current) {
+      setTimeout(() => {
+        messagesContainerRef.current?.scrollTo({
+          top: messagesContainerRef.current.scrollHeight,
+          behavior: 'smooth'
+        });
+      }, 100);
+    }
+  }, [messages]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
