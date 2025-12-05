@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
@@ -74,7 +74,7 @@ export default function ChatPage() {
       }, 2000);
       return () => clearInterval(interval);
     }
-  }, [session, status, router, conversationId]);
+  }, [session, status, router, conversationId, fetchConversations, fetchUnreadCounts, fetchMessages]);
 
   useEffect(() => {
     if (conversationId) {
@@ -87,7 +87,7 @@ export default function ChatPage() {
       setSelectedConversation(null);
       setMessages([]);
     }
-  }, [conversationId, conversations]);
+  }, [conversationId, conversations, fetchMessages]);
 
   useEffect(() => {
     if (messages.length > 0 && messagesContainerRef.current) {
@@ -100,7 +100,7 @@ export default function ChatPage() {
     }
   }, [messages]);
 
-  const fetchConversations = async () => {
+  const fetchConversations = useCallback(async () => {
     try {
       const response = await fetch('/api/conversations');
       if (response.ok) {
@@ -120,9 +120,9 @@ export default function ChatPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [conversationId]);
 
-  const fetchUnreadCounts = async () => {
+  const fetchUnreadCounts = useCallback(async () => {
     try {
       const response = await fetch('/api/conversations/unread');
       if (response.ok) {
@@ -132,9 +132,9 @@ export default function ChatPage() {
     } catch (error) {
       console.error('Error fetching unread counts:', error);
     }
-  };
+  }, []);
 
-  const fetchMessages = async (id: string) => {
+  const fetchMessages = useCallback(async (id: string) => {
     try {
       const response = await fetch(`/api/conversations/${id}/messages`);
       if (response.ok) {
@@ -152,7 +152,7 @@ export default function ChatPage() {
     } catch (error) {
       console.error('Error fetching messages:', error);
     }
-  };
+  }, [session?.user?.id]);
 
   const handleSelectConversation = (conversation: Conversation) => {
     setSelectedConversation(conversation);

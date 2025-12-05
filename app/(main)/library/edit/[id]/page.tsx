@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import MarkdownEditor from '@/components/MarkdownEditor';
@@ -28,13 +28,7 @@ export default function EditQuestionPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (params.id) {
-      fetchFile();
-    }
-  }, [params.id]);
-
-  const fetchFile = async () => {
+  const fetchFile = useCallback(async () => {
     try {
       const response = await fetch(`/api/questions/${params.id}`);
       if (response.ok) {
@@ -48,7 +42,13 @@ export default function EditQuestionPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
+
+  useEffect(() => {
+    if (params.id) {
+      fetchFile();
+    }
+  }, [params.id, fetchFile]);
 
   const handleSave = async () => {
     if (!file) return;

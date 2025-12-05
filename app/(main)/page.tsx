@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
@@ -25,11 +25,7 @@ export default function HomePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
 
-  useEffect(() => {
-    fetchPosts();
-  }, [selectedTag]);
-
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     try {
       const url = selectedTag
         ? `/api/posts?tag=${selectedTag}`
@@ -42,7 +38,11 @@ export default function HomePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedTag]);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
 
   const filteredPosts = posts.filter((post) =>
     post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
