@@ -23,7 +23,7 @@ export async function POST(request: Request) {
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
 
-      return new Promise((resolve, reject) => {
+      return new Promise<string>((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
           {
             resource_type: 'auto',
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
           },
           (error, result) => {
             if (error) reject(error);
-            else resolve(result?.secure_url);
+            else resolve(result?.secure_url || '');
           }
         );
 
