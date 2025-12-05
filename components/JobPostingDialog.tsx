@@ -11,9 +11,8 @@ interface JobPostingDialogProps {
 export interface JobPostingData {
   type: 'seeking_tutor' | 'seeking_student';
   title: string;
-  description: string;
   tags: string[];
-  educationLevel: 'elementary' | 'middle' | 'high' | 'university';
+  targetEducationLevels: ('elementary' | 'middle' | 'high' | 'university')[];
   hourlyRate: {
     min: number;
     max?: number;
@@ -29,9 +28,8 @@ export default function JobPostingDialog({
   const [formData, setFormData] = useState<JobPostingData>({
     type: 'seeking_tutor',
     title: '',
-    description: '',
     tags: [],
-    educationLevel: 'high',
+    targetEducationLevels: [],
     hourlyRate: { min: 0 },
     requirements: '',
   });
@@ -74,6 +72,11 @@ export default function JobPostingDialog({
       return;
     }
 
+    if (formData.targetEducationLevels.length === 0) {
+      alert('請至少選擇一個目標教育程度');
+      return;
+    }
+
     onSubmit({
       ...formData,
       hourlyRate: { min, max },
@@ -83,9 +86,8 @@ export default function JobPostingDialog({
     setFormData({
       type: 'seeking_tutor',
       title: '',
-      description: '',
       tags: [],
-      educationLevel: 'high',
+      targetEducationLevels: [],
       hourlyRate: { min: 0 },
       requirements: '',
     });
@@ -160,38 +162,43 @@ export default function JobPostingDialog({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                描述
+                目標教育程度（可多選）
               </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors"
-                rows={4}
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                教育程度
-              </label>
-              <select
-                value={formData.educationLevel}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    educationLevel: e.target.value as any,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors"
-              >
-                <option value="elementary">國小</option>
-                <option value="middle">國中</option>
-                <option value="high">高中</option>
-                <option value="university">大學</option>
-              </select>
+              <div className="space-y-2">
+                {[
+                  { value: 'elementary', label: '國小' },
+                  { value: 'middle', label: '國中' },
+                  { value: 'high', label: '高中' },
+                  { value: 'university', label: '大學' },
+                ].map((level) => (
+                  <label key={level.value} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.targetEducationLevels.includes(level.value as any)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setFormData({
+                            ...formData,
+                            targetEducationLevels: [
+                              ...formData.targetEducationLevels,
+                              level.value as any,
+                            ],
+                          });
+                        } else {
+                          setFormData({
+                            ...formData,
+                            targetEducationLevels: formData.targetEducationLevels.filter(
+                              (l) => l !== level.value
+                            ),
+                          });
+                        }
+                      }}
+                      className="mr-2"
+                    />
+                    <span className="text-gray-700 dark:text-gray-300">{level.label}</span>
+                  </label>
+                ))}
+              </div>
             </div>
 
             <div>

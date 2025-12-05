@@ -3,7 +3,6 @@
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import remarkGfm from 'remark-gfm';
-import remarkBreaks from 'remark-breaks';
 import rehypeKatex from 'rehype-katex';
 import { parseLaTeX } from './LaTeXParser';
 import Image from 'next/image';
@@ -20,7 +19,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
   return (
     <div className={`prose prose-sm max-w-none ${className}`}>
       <ReactMarkdown
-        remarkPlugins={[remarkMath, remarkGfm, remarkBreaks]}
+        remarkPlugins={[remarkMath, remarkGfm]}
         rehypePlugins={[[rehypeKatex, { throwOnError: false }]]}
         components={{
           img: ({ node, ...props }) => (

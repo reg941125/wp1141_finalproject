@@ -10,6 +10,7 @@ export interface User {
   password?: string;
   bio?: string;
   teachingExperience?: string;
+  educationLevel?: 'elementary' | 'middle' | 'high' | 'university' | 'graduate' | 'other';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -44,7 +45,7 @@ export interface JobPosting {
   title: string;
   description: string;
   tags: string[];
-  educationLevel: 'elementary' | 'middle' | 'high' | 'university';
+  targetEducationLevels: ('elementary' | 'middle' | 'high' | 'university')[];
   hourlyRate: {
     min: number;
     max?: number;

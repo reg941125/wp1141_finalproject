@@ -35,6 +35,10 @@ const UserSchema = new Schema<User>(
     teachingExperience: {
       type: String,
     },
+    educationLevel: {
+      type: String,
+      enum: ['elementary', 'middle', 'high', 'university', 'graduate', 'other'],
+    },
   },
   {
     timestamps: true,

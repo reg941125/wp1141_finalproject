@@ -16,6 +16,7 @@ interface User {
   bannerImage?: string;
   bio?: string;
   teachingExperience?: string;
+  educationLevel?: 'elementary' | 'middle' | 'high' | 'university' | 'graduate' | 'other';
 }
 
 interface QuestionFile {
@@ -32,7 +33,7 @@ interface JobPosting {
   title: string;
   description: string;
   tags: string[];
-  educationLevel: string;
+  targetEducationLevels: ('elementary' | 'middle' | 'high' | 'university')[];
   hourlyRate: {
     min: number;
     max?: number;
@@ -45,6 +46,8 @@ const educationLevelMap = {
   middle: '國中',
   high: '高中',
   university: '大學',
+  graduate: '研究所',
+  other: '其他',
 };
 
 export default function ProfilePage() {
@@ -184,6 +187,16 @@ export default function ProfilePage() {
             )}
           </div>
 
+          {/* Education Level */}
+          {user.educationLevel && (
+            <div className="mt-4">
+              <span className="text-sm text-gray-500 dark:text-gray-400">目前的教育程度：</span>
+              <span className="ml-2 text-sm font-medium text-gray-900 dark:text-white">
+                {educationLevelMap[user.educationLevel]}
+              </span>
+            </div>
+          )}
+
           {/* Following/Followers */}
           <div className="flex space-x-4 mt-4">
             <span className="text-gray-900 dark:text-white">
@@ -254,7 +267,11 @@ export default function ProfilePage() {
                   {posting.description}
                 </p>
                 <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
-                  <span>{educationLevelMap[posting.educationLevel as keyof typeof educationLevelMap]}</span>
+                  <span>
+                    目標: {posting.targetEducationLevels?.length > 0 
+                      ? posting.targetEducationLevels.map(level => educationLevelMap[level as keyof typeof educationLevelMap]).join('、')
+                      : '未指定'}
+                  </span>
                   <span>
                     時薪: ${posting.hourlyRate.min}
                     {posting.hourlyRate.max ? ` - $${posting.hourlyRate.max}` : ''}

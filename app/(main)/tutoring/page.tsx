@@ -9,9 +9,8 @@ interface JobPosting {
   _id: string;
   type: 'seeking_tutor' | 'seeking_student';
   title: string;
-  description: string;
   tags: string[];
-  educationLevel: 'elementary' | 'middle' | 'high' | 'university';
+  targetEducationLevels: ('elementary' | 'middle' | 'high' | 'university')[];
   hourlyRate: {
     min: number;
     max?: number;
@@ -87,7 +86,7 @@ export default function TutoringPage() {
   const filteredPostings = postings.filter((posting) => {
     if (typeFilter !== 'all' && posting.type !== typeFilter) return false;
     if (tagFilter && !posting.tags.includes(tagFilter)) return false;
-    if (educationFilter !== 'all' && posting.educationLevel !== educationFilter) return false;
+    if (educationFilter !== 'all' && (!posting.targetEducationLevels || !posting.targetEducationLevels.includes(educationFilter as any))) return false;
     if (hourlyRateMin && posting.hourlyRate.min < parseInt(hourlyRateMin)) return false;
     if (hourlyRateMax && (posting.hourlyRate.max || posting.hourlyRate.min) > parseInt(hourlyRateMax)) return false;
     return posting.isActive;
@@ -229,13 +228,12 @@ export default function TutoringPage() {
                   {posting.type === 'seeking_tutor' ? '徵家教' : '徵學生'}
                 </span>
               </div>
-              <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
-                {posting.description}
-              </p>
-              <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+              <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mt-4">
                 <div className="flex items-center space-x-4">
                   <span>{posting.authorId?.name || '匿名'}</span>
-                  <span>{educationLevelMap[posting.educationLevel]}</span>
+                  <span>
+                    目標: {posting.targetEducationLevels?.map(level => educationLevelMap[level]).join('、') || '未指定'}
+                  </span>
                   <span>
                     時薪: ${posting.hourlyRate.min}
                     {posting.hourlyRate.max

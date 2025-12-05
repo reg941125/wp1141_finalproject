@@ -9,9 +9,8 @@ interface JobPosting {
   _id: string;
   type: 'seeking_tutor' | 'seeking_student';
   title: string;
-  description: string;
   tags: string[];
-  educationLevel: 'elementary' | 'middle' | 'high' | 'university';
+  targetEducationLevels: ('elementary' | 'middle' | 'high' | 'university')[];
   hourlyRate: {
     min: number;
     max?: number;
@@ -102,8 +101,10 @@ export default function JobPostingDetailPage() {
 
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div>
-            <span className="text-sm font-medium text-gray-900 dark:text-white">教育程度:</span>
-            <span className="ml-2 text-gray-700 dark:text-gray-300">{educationLevelMap[posting.educationLevel]}</span>
+            <span className="text-sm font-medium text-gray-900 dark:text-white">目標教育程度:</span>
+            <span className="ml-2 text-gray-700 dark:text-gray-300">
+              {posting.targetEducationLevels?.map(level => educationLevelMap[level]).join('、') || '未指定'}
+            </span>
           </div>
           <div>
             <span className="text-sm font-medium text-gray-900 dark:text-white">時薪:</span>
@@ -112,11 +113,6 @@ export default function JobPostingDetailPage() {
               {posting.hourlyRate.max ? ` - $${posting.hourlyRate.max}` : ''}
             </span>
           </div>
-        </div>
-
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">描述</h2>
-          <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{posting.description}</p>
         </div>
 
         <div>

@@ -1,7 +1,7 @@
 import mongoose, { Schema, Model } from 'mongoose';
 import { JobPosting } from '@/types';
 
-const JobPostingSchema = new Schema<JobPosting>(
+const JobPostingSchema = new Schema(
   {
     authorId: {
       type: Schema.Types.ObjectId,
@@ -19,16 +19,22 @@ const JobPostingSchema = new Schema<JobPosting>(
     },
     description: {
       type: String,
-      required: true,
+      default: '',
     },
     tags: {
       type: [String],
       default: [],
     },
-    educationLevel: {
-      type: String,
+    targetEducationLevels: {
+      type: [String],
       enum: ['elementary', 'middle', 'high', 'university'],
       required: true,
+      validate: {
+        validator: function(v: string[]) {
+          return v.length > 0;
+        },
+        message: '至少需要選擇一個目標教育程度',
+      },
     },
     hourlyRate: {
       min: {
