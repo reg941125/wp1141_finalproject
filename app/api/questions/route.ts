@@ -10,10 +10,40 @@ export async function GET(request: Request) {
     await dbConnect();
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
+    const subject = searchParams.get('subject');
+    const difficulty = searchParams.get('difficulty');
+    const tag = searchParams.get('tag');
+    const search = searchParams.get('search');
+    const myLibrary = searchParams.get('myLibrary') === 'true';
+    const session = await auth();
 
-    const query = userId ? { authorId: userId } : {};
+    const query: any = {};
+
+    // 如果查詢個人筆記庫，只顯示當前用戶的
+    if (myLibrary && session?.user?.id) {
+      query.authorId = session.user.id;
+    } else if (userId) {
+      query.authorId = userId;
+    } else {
+      // 如果沒有指定用戶，只顯示公開的
+      query.isPublic = true;
+    }
+
+    // 篩選條件
+    if (subject) query.subject = subject;
+    if (difficulty) query.difficulty = difficulty;
+    if (tag) query.tags = { $in: [tag] };
+
+    // 搜尋（名稱或描述）
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+      ];
+    }
+
     const files = await QuestionFileModel.find(query)
-      .populate('authorId', 'name')
+      .populate('authorId', 'name image')
       .sort({ createdAt: -1 })
       .limit(100);
 
@@ -35,7 +65,17 @@ export async function POST(request: Request) {
     }
 
     await dbConnect();
-    const { name, description, fileUrl, showOnProfile } = await request.json();
+    const {
+      name,
+      description,
+      fileUrl,
+      content,
+      showOnProfile,
+      subject,
+      difficulty,
+      tags,
+      isPublic,
+    } = await request.json();
 
     if (!name || !description) {
       return NextResponse.json(
@@ -48,8 +88,13 @@ export async function POST(request: Request) {
       authorId: session.user.id,
       name,
       description,
-      fileUrl,
+      fileUrl: fileUrl || '',
+      content: content || '',
       showOnProfile: showOnProfile || false,
+      subject: subject || '其他',
+      difficulty: difficulty || '中等',
+      tags: tags || [],
+      isPublic: isPublic !== undefined ? isPublic : true,
     });
 
     return NextResponse.json(file, { status: 201 });
