@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@types/nodemailer": "^7.0.4",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.8.0",
     "clsx": "^2.1.1",
@@ -18,6 +19,7 @@
     "mongoose": "^8.5.0",
     "next": "^14.2.0",
     "next-auth": "^5.0.0-beta.25",
+    "nodemailer": "^7.0.11",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "react-markdown": "^10.1.0",

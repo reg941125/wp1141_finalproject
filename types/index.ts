@@ -11,6 +11,8 @@ export interface User {
   bio?: string;
   teachingExperience?: string;
   educationLevel?: 'elementary' | 'middle' | 'high' | 'university' | 'graduate' | 'other';
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
   createdAt: Date;
   updatedAt: Date;
 }

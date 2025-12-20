@@ -39,6 +39,12 @@ const UserSchema = new Schema<User>(
       type: String,
       enum: ['elementary', 'middle', 'high', 'university', 'graduate', 'other'],
     },
+    resetPasswordToken: {
+      type: String,
+    },
+    resetPasswordExpires: {
+      type: Date,
+    },
   },
   {
     timestamps: true,

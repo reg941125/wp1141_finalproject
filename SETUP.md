@@ -56,6 +56,35 @@ cp .env.example .env.local
    - API Secret
 5. 填入對應環境變數
 
+### Email (SMTP) - 用於忘記密碼功能
+
+#### 使用 Gmail
+
+1. 前往 [Google Account](https://myaccount.google.com/)
+2. 前往「安全性」→「兩步驟驗證」（如果尚未啟用，請先啟用）
+3. 前往「應用程式密碼」：
+   - 選擇「應用程式」：郵件
+   - 選擇「裝置」：其他（自訂名稱）
+   - 點擊「產生」
+   - 複製產生的 16 位元應用程式密碼
+4. 填入環境變數：
+   ```
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=587
+   SMTP_USER=your_email@gmail.com
+   SMTP_PASSWORD=your_16_digit_app_password
+   SMTP_FROM=your_email@gmail.com
+   ```
+
+#### 使用其他 SMTP 服務
+
+根據您的 SMTP 服務提供商設定：
+- `SMTP_HOST`: SMTP 伺服器地址（例如：smtp.gmail.com）
+- `SMTP_PORT`: SMTP 端口（通常為 587 或 465）
+- `SMTP_USER`: SMTP 使用者名稱（通常是您的電子郵件）
+- `SMTP_PASSWORD`: SMTP 密碼或應用程式密碼
+- `SMTP_FROM`: 發送郵件的地址（通常與 SMTP_USER 相同）
+
 ## 步驟 3: 測試設定
 
 1. 確認 `.env.local` 檔案已建立並填入所有必要的環境變數
@@ -85,5 +114,13 @@ npm run dev
 - 確認 API Key 和 Secret 正確
 - 確認 Cloud name 正確
 - 檢查 Cloudinary Dashboard 的用量限制
+
+### 郵件發送失敗
+- 確認 SMTP 設定正確
+- 如果使用 Gmail，確認已啟用兩步驟驗證並使用應用程式密碼
+- 確認 SMTP 端口正確（587 用於 TLS，465 用於 SSL）
+- 檢查防火牆是否阻擋 SMTP 連接
+
+
 
 
