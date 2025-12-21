@@ -3,8 +3,8 @@ import mongoose, { Schema, Model } from 'mongoose';
 export interface Notification {
   _id: string;
   userId: mongoose.Types.ObjectId; // 接收通知的用戶
-  type: 'reply' | 'like'; // 通知類型
-  postId: mongoose.Types.ObjectId; // 相關的貼文
+  type: 'reply' | 'like' | 'follow'; // 通知類型
+  postId?: mongoose.Types.ObjectId; // 相關的貼文（follow 類型時為可選）
   triggeredBy: mongoose.Types.ObjectId; // 觸發通知的用戶
   content: string; // 通知內容
   read: boolean; // 是否已讀
@@ -22,13 +22,13 @@ const NotificationSchema = new Schema<Notification>(
     },
     type: {
       type: String,
-      enum: ['reply', 'like'],
+      enum: ['reply', 'like', 'follow'],
       required: true,
     },
     postId: {
       type: Schema.Types.ObjectId,
       ref: 'Post',
-      required: true,
+      required: false,
     },
     triggeredBy: {
       type: Schema.Types.ObjectId,

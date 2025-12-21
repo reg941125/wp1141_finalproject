@@ -9,11 +9,11 @@ import Image from 'next/image';
 
 interface Notification {
   _id: string;
-  type: 'reply' | 'like';
+  type: 'reply' | 'like' | 'follow';
   content: string;
   read: boolean;
   createdAt: string;
-  postId: {
+  postId?: {
     _id: string;
     title: string;
   };
@@ -306,7 +306,12 @@ export default function Navbar() {
                                   if (!notification.read) {
                                     markAsRead(notification._id);
                                   }
-                                  router.push(`/questions/${notification.postId._id}`);
+                                  // 根據通知類型導航到不同頁面
+                                  if (notification.type === 'follow') {
+                                    router.push(`/profile/${notification.triggeredBy._id}`);
+                                  } else if (notification.postId) {
+                                    router.push(`/questions/${notification.postId._id}`);
+                                  }
                                   setIsNotificationOpen(false);
                                 }}
                                 className={`px-4 py-3 cursor-pointer transition-colors ${
@@ -341,6 +346,11 @@ export default function Navbar() {
                                       </span>{' '}
                                       {notification.content}
                                     </p>
+                                    {notification.postId && (
+                                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 truncate">
+                                        {notification.postId.title}
+                                      </p>
+                                    )}
                                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                       {new Date(notification.createdAt).toLocaleString('zh-TW')}
                                     </p>

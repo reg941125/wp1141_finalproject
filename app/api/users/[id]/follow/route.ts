@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import dbConnect from '@/lib/db';
 import FollowModel from '@/lib/models/Follow';
+import NotificationModel from '@/lib/models/Notification';
+import UserModel from '@/lib/models/User';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,6 +39,19 @@ export async function POST(
     await FollowModel.create({
       followerId: session.user.id,
       followingId: params.id,
+    });
+
+    // 獲取追蹤者的名字
+    const follower = await UserModel.findById(session.user.id).select('name');
+    const followerName = follower?.name || '某人';
+
+    // 創建追蹤通知
+    await NotificationModel.create({
+      userId: params.id, // 被追蹤的人收到通知
+      type: 'follow',
+      triggeredBy: session.user.id, // 追蹤者
+      content: `${followerName} 開始追蹤你`,
+      read: false,
     });
 
     return NextResponse.json({ success: true, following: true });

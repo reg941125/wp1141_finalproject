@@ -73,6 +73,7 @@ export default function QuestionDetailPage() {
       };
       loadData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id, userId]);
 
   const fetchPost = async (incrementViews = true) => {
