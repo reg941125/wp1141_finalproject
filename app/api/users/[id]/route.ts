@@ -3,6 +3,8 @@ import { auth } from '@/lib/auth';
 import dbConnect from '@/lib/db';
 import UserModel from '@/lib/models/User';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
@@ -45,7 +47,7 @@ export async function PUT(
     }
 
     await dbConnect();
-    const { bio, teachingExperience, username, image, bannerImage } = await request.json();
+    const { bio, teachingExperience, username, image, bannerImage, educationLevel } = await request.json();
 
     // Check username uniqueness if provided
     if (username) {
@@ -76,6 +78,7 @@ export async function PUT(
     if (username !== undefined) updateData.username = username.toLowerCase();
     if (image !== undefined) updateData.image = image;
     if (bannerImage !== undefined) updateData.bannerImage = bannerImage;
+    if (educationLevel !== undefined) updateData.educationLevel = educationLevel || null;
 
     const user = await UserModel.findByIdAndUpdate(
       params.id,

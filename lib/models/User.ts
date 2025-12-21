@@ -35,6 +35,16 @@ const UserSchema = new Schema<User>(
     teachingExperience: {
       type: String,
     },
+    educationLevel: {
+      type: String,
+      enum: ['elementary', 'middle', 'high', 'university', 'graduate', 'other'],
+    },
+    resetPasswordToken: {
+      type: String,
+    },
+    resetPasswordExpires: {
+      type: Date,
+    },
   },
   {
     timestamps: true,

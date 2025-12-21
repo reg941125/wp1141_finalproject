@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
@@ -51,10 +51,6 @@ export default function HomePage() {
   const [subjectOptionsState, setSubjectOptionsState] = useState<string[]>(ALL_SUBJECT_OPTIONS);
 
   useEffect(() => {
-    fetchPosts();
-  }, [selectedTag, selectedLevel, selectedSubject]);
-
-  useEffect(() => {
     if (
       selectedLevel &&
       selectedSubject &&
@@ -64,7 +60,7 @@ export default function HomePage() {
     }
   }, [selectedLevel, selectedSubject]);
 
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       if (selectedTag) params.append('tag', selectedTag);
@@ -93,7 +89,11 @@ export default function HomePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedTag, selectedLevel, selectedSubject]);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
 
   const subjectOptions = useMemo(() => {
     if (selectedLevel && SUBJECT_OPTIONS_BY_LEVEL[selectedLevel]?.length) {

@@ -90,6 +90,17 @@ export default function LoginPage() {
             </div>
           </div>
 
+          <div className="flex items-center justify-end">
+            <div className="text-sm">
+              <Link
+                href="/forgot-password"
+                className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors"
+              >
+                忘記密碼？
+              </Link>
+            </div>
+          </div>
+
           <div>
             <button
               type="submit"
@@ -150,5 +161,7 @@ export default function LoginPage() {
     </div>
   );
 }
+
+
 
 

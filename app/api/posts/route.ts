@@ -4,6 +4,8 @@ import dbConnect from '@/lib/db';
 import PostModel from '@/lib/models/Post';
 import AnswerModel from '@/lib/models/Answer';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   try {
     await dbConnect();

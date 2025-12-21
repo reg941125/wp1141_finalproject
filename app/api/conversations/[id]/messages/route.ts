@@ -5,6 +5,8 @@ import ConversationModel from '@/lib/models/Conversation';
 import MessageModel from '@/lib/models/Message';
 import mongoose from 'mongoose';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }

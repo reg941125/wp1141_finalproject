@@ -14,7 +14,7 @@ export default function Combobox({
   value,
   onChange,
   options,
-  placeholder = '',
+  placeholder = '選擇...',
   className = '',
 }: ComboboxProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -76,11 +76,12 @@ export default function Combobox({
     }
   };
 
-  // 如果 className 中没有圆角类，则使用默认的 rounded-md
+  // 如果 className 中沒有圓角類，補上預設的 rounded-md
   const hasRoundedClass = className && /rounded/.test(className);
-  const baseClasses = 'w-full px-4 py-2 pr-10 border border-gray-300 dark:border-gray-600 focus:outline focus:outline-2 focus:outline-blue-500 dark:focus:outline-blue-400 focus:outline-offset-[-2px] focus:ring-0 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 transition-colors';
-  const inputClassName = hasRoundedClass 
-    ? `${baseClasses} ${className}` 
+  const baseClasses =
+    'w-full px-4 py-2 pr-10 border border-gray-300 dark:border-gray-600 focus:outline focus:outline-2 focus:outline-blue-500 dark:focus:outline-blue-400 focus:outline-offset-[-2px] focus:ring-0 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 transition-colors';
+  const inputClassName = hasRoundedClass
+    ? `${baseClasses} ${className}`
     : `${baseClasses} rounded-md ${className}`;
 
   return (
@@ -99,9 +100,11 @@ export default function Combobox({
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className={filteredOptions.length > 0
-            ? "absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none"
-            : "hidden"}
+          className={
+            filteredOptions.length > 0
+              ? 'absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none'
+              : 'hidden'
+          }
         >
           <svg
             className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-180' : ''}`}
@@ -136,4 +139,3 @@ export default function Combobox({
     </div>
   );
 }
-

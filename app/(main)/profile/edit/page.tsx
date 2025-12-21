@@ -14,6 +14,7 @@ export default function EditProfilePage() {
   const [username, setUsername] = useState('');
   const [image, setImage] = useState('');
   const [bannerImage, setBannerImage] = useState('');
+  const [educationLevel, setEducationLevel] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -28,6 +29,7 @@ export default function EditProfilePage() {
       setUsername('');
       setImage('');
       setBannerImage('');
+      setEducationLevel('');
       setLoading(false);
       router.push('/login');
       return;
@@ -49,6 +51,7 @@ export default function EditProfilePage() {
         setUsername(data.username || '');
         setImage(data.image || '');
         setBannerImage(data.bannerImage || '');
+        setEducationLevel(data.educationLevel || '');
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -162,12 +165,13 @@ export default function EditProfilePage() {
       const response = await fetch(`/api/users/${session.user.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+          body: JSON.stringify({
           bio,
           teachingExperience,
           username: username || undefined,
           image,
           bannerImage,
+          educationLevel: educationLevel || undefined,
         }),
       });
 
@@ -305,6 +309,26 @@ export default function EditProfilePage() {
               rows={4}
               placeholder="介紹一下自己..."
             />
+          </div>
+
+          {/* Education Level */}
+          <div>
+            <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+              目前的教育程度
+            </label>
+            <select
+              value={educationLevel}
+              onChange={(e) => setEducationLevel(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
+            >
+              <option value="">請選擇</option>
+              <option value="elementary">國小</option>
+              <option value="middle">國中</option>
+              <option value="high">高中</option>
+              <option value="university">大學</option>
+              <option value="graduate">研究所</option>
+              <option value="other">其他</option>
+            </select>
           </div>
 
           {/* Teaching Experience */}

@@ -3,6 +3,8 @@ import { auth } from '@/lib/auth';
 import dbConnect from '@/lib/db';
 import JobPostingModel from '@/lib/models/JobPosting';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   try {
     await dbConnect();
@@ -18,7 +20,7 @@ export async function GET(request: Request) {
 
     if (type) query.type = type;
     if (tag) query.tags = tag;
-    if (educationLevel) query.educationLevel = educationLevel;
+    if (educationLevel) query.targetEducationLevels = { $in: [educationLevel] }; // Use $in for array matching
     if (userId) query.authorId = userId;
     if (hourlyRateMin) {
       query['hourlyRate.min'] = { $gte: parseInt(hourlyRateMin) };
@@ -55,9 +57,13 @@ export async function POST(request: Request) {
     await dbConnect();
     const data = await request.json();
 
+    // Remove description from data if present, since we no longer use it
+    const { description, ...postingData } = data;
+
     const posting = await JobPostingModel.create({
       authorId: session.user.id,
-      ...data,
+      description: '', // Set to empty string for backward compatibility
+      ...postingData,
     });
 
     return NextResponse.json(posting, { status: 201 });

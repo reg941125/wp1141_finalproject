@@ -10,6 +10,9 @@ export interface User {
   password?: string;
   bio?: string;
   teachingExperience?: string;
+  educationLevel?: 'elementary' | 'middle' | 'high' | 'university' | 'graduate' | 'other';
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -47,7 +50,7 @@ export interface JobPosting {
   title: string;
   description: string;
   tags: string[];
-  educationLevel: 'elementary' | 'middle' | 'high' | 'university';
+  targetEducationLevels: ('elementary' | 'middle' | 'high' | 'university')[];
   hourlyRate: {
     min: number;
     max?: number;
@@ -66,6 +69,10 @@ export interface QuestionFile {
   fileUrl?: string;
   content: string;
   showOnProfile: boolean;
+  subject: '數學' | '物理' | '化學' | '生物' | '國文' | '英文' | '歷史' | '地理' | '公民' | '其他';
+  difficulty: '簡單' | '中等' | '困難';
+  tags: string[];
+  isPublic: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

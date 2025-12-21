@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import MarkdownRenderer from './MarkdownRenderer';
 import LaTeXInput from './LaTeXInput';
 import SlashCommandMenu from './SlashCommandMenu';
@@ -271,7 +271,7 @@ export default function MarkdownEditor({
     setLatexInput({ ...latexInput, show: false });
   };
 
-  const handleLaTeXCancel = () => {
+  const handleLaTeXCancel = useCallback(() => {
     if (!textareaRef.current) return;
 
     // Remove the /in  or /block  that was typed (including the space)
@@ -291,7 +291,7 @@ export default function MarkdownEditor({
     }, 0);
 
     setLatexInput({ ...latexInput, show: false });
-  };
+  }, [latexInput, value, onChange]);
 
   // Close LaTeX input when clicking outside
   useEffect(() => {
@@ -305,7 +305,7 @@ export default function MarkdownEditor({
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
-  }, [latexInput.show]);
+  }, [latexInput.show, handleLaTeXCancel]);
 
   return (
     <div ref={containerRef} className={`border border-gray-300 dark:border-gray-600 rounded-lg ${className} transition-colors bg-white dark:bg-gray-800 overflow-hidden`}>

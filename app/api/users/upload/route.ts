@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import cloudinary from '@/lib/cloudinary';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   try {
     const session = await auth();
@@ -23,7 +25,7 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    return new Promise((resolve, reject) => {
+    return new Promise<NextResponse>((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
           resource_type: 'auto',
@@ -35,7 +37,7 @@ export async function POST(request: Request) {
         (error, result) => {
           if (error) {
             console.error('Cloudinary upload error:', error);
-            reject(NextResponse.json(
+            resolve(NextResponse.json(
               { error: 'Failed to upload file' },
               { status: 500 }
             ));
