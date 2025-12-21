@@ -3,8 +3,8 @@ import mongoose, { Schema, Model } from 'mongoose';
 export interface Like {
   _id: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
-  targetId: mongoose.Types.ObjectId; // 可以是 Post 或 Answer 的 ID
-  targetType: 'Post' | 'Answer';
+  targetId: mongoose.Types.ObjectId; // 可以是 Post、Answer 或 JobPosting 的 ID
+  targetType: 'Post' | 'Answer' | 'JobPosting';
   createdAt: Date;
 }
 
@@ -22,7 +22,7 @@ const LikeSchema = new Schema<Like>(
     },
     targetType: {
       type: String,
-      enum: ['Post', 'Answer'],
+      enum: ['Post', 'Answer', 'JobPosting'],
       required: true,
     },
   },

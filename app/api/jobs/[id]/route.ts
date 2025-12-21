@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import dbConnect from '@/lib/db';
 import JobPostingModel from '@/lib/models/JobPosting';
+import LikeModel from '@/lib/models/Like';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,13 +12,22 @@ export async function GET(
 ) {
   try {
     await dbConnect();
-    const posting = await JobPostingModel.findById(params.id).populate('authorId', 'name');
+    const posting = await JobPostingModel.findById(params.id).populate('authorId', 'name image _id').lean();
 
     if (!posting) {
       return NextResponse.json({ error: 'Posting not found' }, { status: 404 });
     }
 
-    return NextResponse.json(posting);
+    // 統計按讚數量
+    const likeCount = await LikeModel.countDocuments({
+      targetId: params.id,
+      targetType: 'JobPosting',
+    });
+
+    return NextResponse.json({
+      ...posting,
+      likes: likeCount,
+    });
   } catch (error) {
     console.error('Error fetching posting:', error);
     return NextResponse.json(

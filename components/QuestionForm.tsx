@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import MarkdownEditor from '@/components/MarkdownEditor';
 import Combobox from '@/components/Combobox';
@@ -13,55 +13,16 @@ const LEVEL_OPTIONS = [
   '研究所',
 ];
 
-// 各教育級別對應的科目選項
-const SUBJECT_OPTIONS_BY_LEVEL: Record<string, string[]> = {
-  '國小': [
-    '國語',
-    '英文',
-    '數學',
-    '自然',
-    '社會',
-  ],
-  '國中': [
-    '國文',
-    '英文',
-    '數學',
-    '生物',
-    '理化',
-    '地科',
-    '歷史',
-    '地理',
-    '公民',
-  ],
-  '高中': [
-    '國文',
-    '英文',
-    '數學',
-    '物理',
-    '化學',
-    '生物',
-    '地科',
-    '歷史',
-    '地理',
-    '公民',
-  ],
-  '大學': [],
-  '研究所': [],
-  '其他': [],
-};
-
 interface QuestionFormProps {
   initialTitle?: string;
   initialContent?: string;
   initialTags?: string;
   initialLevel?: string;
-  initialSubject?: string;
   onSubmit: (data: {
     title: string;
     content: string;
     tags: string[];
     level: string;
-    subject: string;
   }) => Promise<void>;
   onCancel?: () => void;
   submitLabel?: string;
@@ -74,7 +35,6 @@ export default function QuestionForm({
   initialContent = '',
   initialTags = '',
   initialLevel = '',
-  initialSubject = '',
   onSubmit,
   onCancel,
   submitLabel = '發布',
@@ -86,7 +46,6 @@ export default function QuestionForm({
   const [content, setContent] = useState(initialContent);
   const [tags, setTags] = useState(initialTags);
   const [levelTag, setLevelTag] = useState(initialLevel);
-  const [subject, setSubject] = useState(initialSubject);
 
   // 同步初始值的变化（用于编辑模式）
   useEffect(() => {
@@ -94,29 +53,18 @@ export default function QuestionForm({
     setContent(initialContent);
     setTags(initialTags);
     setLevelTag(initialLevel);
-    setSubject(initialSubject);
-  }, [initialTitle, initialContent, initialTags, initialLevel, initialSubject]);
-
-  // 根據選擇的年級動態獲取對應的科目選項
-  const subjectOptions = useMemo(() => {
-    if (levelTag && SUBJECT_OPTIONS_BY_LEVEL[levelTag]) {
-      return SUBJECT_OPTIONS_BY_LEVEL[levelTag];
-    }
-    // 如果沒有選擇年級或年級不在映射中，返回所有科目
-    return SUBJECT_OPTIONS_BY_LEVEL['其他'];
-  }, [levelTag]);
+  }, [initialTitle, initialContent, initialTags, initialLevel]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) return;
 
-    const tagArray = tags.split(',').map((t) => t.trim()).filter(Boolean);
+    const tagArray = tags.split(/[,、]/).map((t) => t.trim()).filter(Boolean);
     const submitData = {
       title,
       content,
       tags: tagArray,
       level: levelTag || '',
-      subject: subject || '',
     };
     await onSubmit(submitData);
   };
@@ -155,16 +103,7 @@ export default function QuestionForm({
               onChange={setLevelTag}
               options={LEVEL_OPTIONS}
               placeholder="程度"
-              className="rounded-l-md sm:rounded-r-none rounded-r-md order-r-0"
-            />
-          </div>
-          <div className="w-32 sm:w-36 flex-shrink-0">
-            <Combobox
-              value={subject}
-              onChange={setSubject}
-              options={subjectOptions}
-              placeholder="科目"
-              className="sm:rounded-none rounded-md border-r-0"
+              className="rounded-l-md rounded-r-md sm:rounded-r-none"
             />
           </div>
           <div className="flex-1 min-w-0">
@@ -172,8 +111,8 @@ export default function QuestionForm({
               type="text"
               value={tags}
               onChange={(e) => setTags(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-r-md sm:rounded-l-none rounded-l-md focus:outline focus:outline-2 focus:outline-blue-500 dark:focus:outline-blue-400 focus:outline-offset-[-2px] focus:ring-0 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 transition-colors"
-              placeholder="其他，例如：文言文、文法、三角函數、法律、反應速率......"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-l-md rounded-r-md sm:rounded-l-none focus:outline focus:outline-2 focus:outline-blue-500 dark:focus:outline-blue-400 focus:outline-offset-[-2px] focus:ring-0 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 transition-colors"
+              placeholder="其他（用頓號或逗號分隔），例如：文言文、文法、三角函數......"
             />
           </div>
         </div>

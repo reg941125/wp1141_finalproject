@@ -87,7 +87,6 @@ export default function EditQuestionPage() {
     content: string;
     tags: string[];
     level: string;
-    subject: string;
   }) => {
     setSaving(true);
     try {
@@ -117,9 +116,8 @@ export default function EditQuestionPage() {
       <QuestionForm
         initialTitle={post.title}
         initialContent={post.content}
-        initialTags={post.tags.join(', ')}
+        initialTags={post.tags.join('、')}
         initialLevel={post.level || ''}
-        initialSubject={post.subject || ''}
         onSubmit={handleSubmit}
         onCancel={() => router.push(`/questions/${params.id}`)}
         submitLabel="儲存"

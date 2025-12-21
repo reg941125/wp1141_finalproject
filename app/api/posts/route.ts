@@ -13,12 +13,10 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const tag = searchParams.get('tag');
     const level = searchParams.get('level');
-    const subject = searchParams.get('subject');
 
     const query: Record<string, any> = {};
     if (tag) query.tags = tag;
     if (level) query.level = { $regex: level, $options: 'i' };
-    if (subject) query.subject = { $regex: subject, $options: 'i' };
     const posts = await PostModel.find(query)
       .populate('authorId', 'name image _id')
       .sort({ createdAt: -1 })
@@ -76,7 +74,7 @@ export async function POST(request: Request) {
     }
 
     await dbConnect();
-    const { title, content, tags, level, subject } = await request.json();
+    const { title, content, tags, level } = await request.json();
 
     if (!title || !content) {
       return NextResponse.json(
@@ -91,7 +89,6 @@ export async function POST(request: Request) {
       content,
       tags: tags || [],
       level: level || '',
-      subject: subject || '',
     });
 
     return NextResponse.json(post, { status: 201 });

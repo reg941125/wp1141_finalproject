@@ -32,7 +32,7 @@ interface Post {
 
 export default function HomePage() {
   const { data: session } = useSession();
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [allPosts, setAllPosts] = useState<Post[]>([]); // 存儲所有貼文
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
@@ -45,14 +45,10 @@ export default function HomePage() {
 
   const fetchPosts = useCallback(async () => {
     try {
-      const params = new URLSearchParams();
-      if (selectedTag) params.append('tag', selectedTag);
-      if (selectedLevel) params.append('level', selectedLevel);
-      const queryString = params.toString();
-      const url = queryString ? `/api/posts?${queryString}` : '/api/posts';
-      const response = await fetch(url);
+      // 始終獲取所有貼文，不進行服務端篩選
+      const response = await fetch('/api/posts');
       const data = await response.json();
-      setPosts(data);
+      setAllPosts(data);
       // 收集現有的程度，補充到下拉清單
       const levelSet = new Set(LEVEL_OPTIONS);
       data.forEach((post: Post) => {
@@ -86,7 +82,7 @@ export default function HomePage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedTag, selectedLevel, session]);
+  }, [session]);
 
   useEffect(() => {
     fetchPosts();
@@ -109,15 +105,29 @@ export default function HomePage() {
   }, []);
 
 
-  const filteredPosts = posts.filter((post) =>
-    post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    post.content.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // 在前端進行篩選
+  const filteredPosts = allPosts.filter((post) => {
+    // 搜尋關鍵字篩選
+    const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      post.content.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // 程度篩選
+    const matchesLevel = !selectedLevel || post.level === selectedLevel;
+    
+    // 標籤篩選（包括 subject）
+    const postTags = [...post.tags];
+    if (post.subject && post.subject.trim()) {
+      postTags.push(post.subject.trim());
+    }
+    const matchesTag = !selectedTag || postTags.includes(selectedTag);
+    
+    return matchesSearch && matchesLevel && matchesTag;
+  });
 
-  // 收集所有標籤，包括將 subject 作為標籤
+  // 從所有貼文收集標籤，而不是從篩選後的貼文
   const allTags = Array.from(
     new Set(
-      posts.flatMap((post) => {
+      allPosts.flatMap((post) => {
         const tags = [...post.tags];
         // 如果有 subject，也加入標籤列表
         if (post.subject && post.subject.trim()) {
@@ -336,17 +346,29 @@ export default function HomePage() {
                 return (
                   <div className="flex flex-wrap gap-2 mt-2 items-center">
                     {hasLevel && (
-                      <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded text-xs">
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setSelectedLevel(level);
+                        }}
+                        className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded text-xs hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors cursor-pointer"
+                      >
                         {level}
-                      </span>
+                      </button>
                     )}
                     {allPostTags.length > 0 && allPostTags.map((tag) => (
-                      <span
+                      <button
                         key={tag}
-                        className="px-2 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded text-xs"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setSelectedTag(tag);
+                        }}
+                        className="px-2 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded text-xs hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors cursor-pointer"
                       >
                         {tag}
-                      </span>
+                      </button>
                     ))}
                     <div className="ml-auto flex items-center space-x-4 text-gray-600 dark:text-gray-300">
                       <div className="flex items-center space-x-1">

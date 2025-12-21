@@ -41,11 +41,19 @@ export default function JobPostingDialog({
   if (!isOpen) return null;
 
   const handleAddTag = () => {
-    if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
-      setFormData({
-        ...formData,
-        tags: [...formData.tags, tagInput.trim()],
-      });
+    if (tagInput.trim()) {
+      // 支持頓號和逗號分隔標籤
+      const newTags = tagInput
+        .split(/[,、]/)
+        .map((t) => t.trim())
+        .filter((t) => t && !formData.tags.includes(t));
+      
+      if (newTags.length > 0) {
+        setFormData({
+          ...formData,
+          tags: [...formData.tags, ...newTags],
+        });
+      }
       setTagInput('');
     }
   };
@@ -252,7 +260,7 @@ export default function JobPostingDialog({
                       handleAddTag();
                     }
                   }}
-                  placeholder="輸入標籤後按 Enter"
+                  placeholder="輸入標籤（用頓號或逗號分隔）後按 Enter"
                   className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 transition-colors"
                 />
                 <button

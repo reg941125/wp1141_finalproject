@@ -3,7 +3,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import Image from 'next/image';
 import JobPostingDialog, { JobPostingData } from '@/components/JobPostingDialog';
+import { Heart } from 'lucide-react';
 
 interface JobPosting {
   _id: string;
@@ -19,9 +21,11 @@ interface JobPosting {
   authorId: {
     _id: string;
     name: string;
+    image?: string;
   };
   createdAt: string;
   isActive: boolean;
+  likes: number;
 }
 
 const educationLevelMap = {
@@ -41,6 +45,8 @@ export default function TutoringPage() {
   const [hourlyRateMin, setHourlyRateMin] = useState('');
   const [hourlyRateMax, setHourlyRateMax] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [likedPostings, setLikedPostings] = useState<Set<string>>(new Set());
+  const [likingPostings, setLikingPostings] = useState<Set<string>>(new Set());
 
   const fetchPostings = useCallback(async () => {
     try {
@@ -54,12 +60,32 @@ export default function TutoringPage() {
       const response = await fetch(`/api/jobs?${params.toString()}`);
       const data = await response.json();
       setPostings(data);
+
+      // 如果已登入，獲取按讚狀態
+      if (session) {
+        const postingIds = data.map((posting: JobPosting) => posting._id);
+        if (postingIds.length > 0) {
+          try {
+            const likesResponse = await fetch('/api/jobs/likes-status', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ postingIds }),
+            });
+            if (likesResponse.ok) {
+              const { likedPostingIds } = await likesResponse.json();
+              setLikedPostings(new Set(likedPostingIds));
+            }
+          } catch (error) {
+            console.error('Error fetching like statuses:', error);
+          }
+        }
+      }
     } catch (error) {
       console.error('Error fetching postings:', error);
     } finally {
       setLoading(false);
     }
-  }, [typeFilter, tagFilter, educationFilter, hourlyRateMin, hourlyRateMax]);
+  }, [typeFilter, tagFilter, educationFilter, hourlyRateMin, hourlyRateMax, session]);
 
   useEffect(() => {
     fetchPostings();
@@ -79,6 +105,117 @@ export default function TutoringPage() {
     } catch (error) {
       console.error('Error creating posting:', error);
     }
+  };
+
+  const handleLike = async (postingId: string, e: React.MouseEvent) => {
+    e.preventDefault(); // 防止觸發 Link 導航
+    e.stopPropagation(); // 防止事件冒泡
+
+    if (!session) {
+      alert('請先登入才能按讚');
+      return;
+    }
+
+    if (likingPostings.has(postingId)) return;
+
+    setLikingPostings((prev) => new Set(prev).add(postingId));
+
+    const wasLiked = likedPostings.has(postingId);
+
+    // 樂觀更新 UI
+    setLikedPostings((prev) => {
+      const newSet = new Set(prev);
+      if (wasLiked) {
+        newSet.delete(postingId);
+      } else {
+        newSet.add(postingId);
+      }
+      return newSet;
+    });
+
+    setPostings((prevPostings) =>
+      prevPostings.map((posting) =>
+        posting._id === postingId
+          ? { ...posting, likes: posting.likes + (wasLiked ? -1 : 1) }
+          : posting
+      )
+    );
+
+    try {
+      const response = await fetch(`/api/jobs/${postingId}/like`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        const { liked, likes } = await response.json();
+        setLikedPostings((prev) => {
+          const newSet = new Set(prev);
+          if (liked) {
+            newSet.add(postingId);
+          } else {
+            newSet.delete(postingId);
+          }
+          return newSet;
+        });
+        setPostings((prevPostings) =>
+          prevPostings.map((posting) =>
+            posting._id === postingId ? { ...posting, likes } : posting
+          )
+        );
+      } else {
+        // 回滾樂觀更新
+        setLikedPostings((prev) => {
+          const newSet = new Set(prev);
+          if (wasLiked) {
+            newSet.add(postingId);
+          } else {
+            newSet.delete(postingId);
+          }
+          return newSet;
+        });
+        setPostings((prevPostings) =>
+          prevPostings.map((posting) =>
+            posting._id === postingId
+              ? { ...posting, likes: posting.likes + (wasLiked ? 1 : -1) }
+              : posting
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      // 回滾樂觀更新
+      setLikedPostings((prev) => {
+        const newSet = new Set(prev);
+        if (wasLiked) {
+          newSet.add(postingId);
+        } else {
+          newSet.delete(postingId);
+        }
+        return newSet;
+      });
+      setPostings((prevPostings) =>
+        prevPostings.map((posting) =>
+          posting._id === postingId
+            ? { ...posting, likes: posting.likes + (wasLiked ? 1 : -1) }
+            : posting
+        )
+      );
+    } finally {
+      setLikingPostings((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(postingId);
+        return newSet;
+      });
+    }
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   const allTags = Array.from(new Set(postings.flatMap((p) => p.tags)));
@@ -230,7 +367,26 @@ export default function TutoringPage() {
               </div>
               <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mt-4">
                 <div className="flex items-center space-x-4">
-                  <span>{posting.authorId?.name || '匿名'}</span>
+                  <Link
+                    href={`/profile/${posting.authorId?._id}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center space-x-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  >
+                    {posting.authorId?.image ? (
+                      <Image
+                        src={posting.authorId.image}
+                        alt={posting.authorId.name}
+                        width={24}
+                        height={24}
+                        className="rounded-full"
+                      />
+                    ) : (
+                      <div className="w-6 h-6 rounded-full bg-blue-500 dark:bg-blue-600 flex items-center justify-center text-white text-xs">
+                        {getInitials(posting.authorId?.name || '匿名')}
+                      </div>
+                    )}
+                    <span>{posting.authorId?.name || '匿名'}</span>
+                  </Link>
                   <span>
                     目標: {posting.targetEducationLevels?.map(level => educationLevelMap[level]).join('、') || '未指定'}
                   </span>
@@ -241,15 +397,31 @@ export default function TutoringPage() {
                       : ''}
                   </span>
                 </div>
-                <div className="flex space-x-2">
-                  {posting.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded text-xs"
-                    >
-                      {tag}
-                    </span>
-                  ))}
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={(e) => handleLike(posting._id, e)}
+                    className="flex items-center space-x-1 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                    disabled={likingPostings.has(posting._id)}
+                  >
+                    <Heart
+                      className={`w-5 h-5 ${
+                        likedPostings.has(posting._id)
+                          ? 'fill-red-500 text-red-500 dark:fill-red-400 dark:text-red-400'
+                          : ''
+                      }`}
+                    />
+                    <span>{posting.likes || 0}</span>
+                  </button>
+                  <div className="flex space-x-2">
+                    {posting.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded text-xs"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
             </Link>

@@ -56,7 +56,7 @@ export async function PUT(
     }
     
     // Other fields require authentication and ownership
-    if (updates.title !== undefined || updates.content !== undefined || updates.tags !== undefined || updates.level !== undefined || updates.subject !== undefined) {
+    if (updates.title !== undefined || updates.content !== undefined || updates.tags !== undefined || updates.level !== undefined) {
       const session = await auth();
       if (!session?.user?.id) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -70,7 +70,6 @@ export async function PUT(
       if (updates.content !== undefined) post.content = updates.content;
       if (updates.tags !== undefined) post.tags = updates.tags;
       if (updates.level !== undefined) post.level = updates.level;
-      if (updates.subject !== undefined) post.subject = updates.subject;
     }
     
     await post.save();

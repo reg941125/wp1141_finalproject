@@ -33,7 +33,6 @@ export default function NewQuestionPage() {
     content: string;
     tags: string[];
     level: string;
-    subject: string;
   }) => {
     setSubmitting(true);
     try {

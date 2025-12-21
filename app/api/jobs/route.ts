@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import dbConnect from '@/lib/db';
 import JobPostingModel from '@/lib/models/JobPosting';
+import LikeModel from '@/lib/models/Like';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,11 +34,34 @@ export async function GET(request: Request) {
     }
 
     const postings = await JobPostingModel.find(query)
-      .populate('authorId', 'name')
+      .populate('authorId', 'name image _id')
       .sort({ createdAt: -1 })
-      .limit(100);
+      .limit(100)
+      .lean();
 
-    return NextResponse.json(postings);
+    const postingIds = postings.map((posting) => posting._id);
+    
+    // 統計按讚數量
+    const likeCounts = await LikeModel.aggregate([
+      { 
+        $match: { 
+          targetId: { $in: postingIds },
+          targetType: 'JobPosting'
+        } 
+      },
+      { $group: { _id: '$targetId', count: { $sum: 1 } } },
+    ]);
+    const likeCountMap = likeCounts.reduce<Record<string, number>>((acc, curr) => {
+      acc[curr._id.toString()] = curr.count;
+      return acc;
+    }, {});
+
+    const postingsWithLikes = postings.map((posting) => ({
+      ...posting,
+      likes: likeCountMap[posting._id.toString()] || 0,
+    }));
+
+    return NextResponse.json(postingsWithLikes);
   } catch (error) {
     console.error('Error fetching job postings:', error);
     return NextResponse.json(
