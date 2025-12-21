@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import Image from 'next/image';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import Combobox from '@/components/Combobox';
 import { HiEye } from 'react-icons/hi';
@@ -32,7 +33,9 @@ interface Post {
   subject?: string;
   answersCount?: number;
   authorId: {
+    _id: string;
     name: string;
+    image?: string;
   };
   createdAt: string;
   views: number;
@@ -231,9 +234,37 @@ export default function HomePage() {
               <div className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
                 <MarkdownRenderer content={post.content.substring(0, 200)} />
               </div>
-              <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 gap-4">
-                <span>{post.authorId?.name || '匿名'}</span>
-                <span>{new Date(post.createdAt).toLocaleDateString('zh-TW')}</span>
+              
+              {/* 作者信息欄 */}
+              <div className="flex items-center gap-3 mb-3">
+                <Link
+                  href={`/profile/${post.authorId?._id}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                >
+                  {post.authorId?.image ? (
+                    <Image
+                      src={post.authorId.image}
+                      alt={post.authorId.name}
+                      width={32}
+                      height={32}
+                      className="rounded-full object-cover"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+                      <span className="text-gray-700 dark:text-gray-300 text-sm font-bold">
+                        {post.authorId?.name?.charAt(0).toUpperCase() || '?'}
+                      </span>
+                    </div>
+                  )}
+                  <span className="text-sm text-gray-700 dark:text-gray-300 font-medium hover:text-blue-600 dark:hover:text-blue-400">
+                    {post.authorId?.name || '匿名'}
+                  </span>
+                </Link>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  {new Date(post.createdAt).toLocaleDateString('zh-TW')}
+                </span>
               </div>
               {(() => {
                 const level = post.level || '';
