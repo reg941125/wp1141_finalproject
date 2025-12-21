@@ -118,6 +118,15 @@ export default function ProfilePage() {
       return;
     }
 
+    // 防止追蹤自己
+    if (session.user.id === params.userId || 
+        (user && session.user.id === user._id) ||
+        (user && session.user.id === user._id.toString()) ||
+        session.user.id?.toString() === params.userId?.toString()) {
+      alert('無法追蹤自己');
+      return;
+    }
+
     setFollowLoading(true);
     try {
       const method = isFollowing ? 'DELETE' : 'POST';
@@ -128,9 +137,13 @@ export default function ProfilePage() {
       if (response.ok) {
         setIsFollowing(!isFollowing);
         setFollowersCount((prev) => (isFollowing ? prev - 1 : prev + 1));
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || '操作失敗，請稍後再試');
       }
     } catch (error) {
       console.error('Error toggling follow:', error);
+      alert('操作失敗，請稍後再試');
     } finally {
       setFollowLoading(false);
     }
@@ -173,7 +186,10 @@ export default function ProfilePage() {
     return <div className="max-w-4xl mx-auto px-4 py-8 text-gray-900 dark:text-white">用戶不存在</div>;
   }
 
-  const isOwnProfile = session?.user?.id === params.userId || session?.user?.id === user._id;
+  const isOwnProfile = session?.user?.id === params.userId || 
+                        session?.user?.id === user._id || 
+                        session?.user?.id === user._id.toString() ||
+                        session?.user?.id?.toString() === params.userId?.toString();
   const handle = user.username ? `@${user.username}` : (user.email ? `@${user.email.split('@')[0]}` : '@user');
   
   // 生成頭像縮寫（如果沒有圖片）
