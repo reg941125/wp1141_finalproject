@@ -164,7 +164,7 @@ export default function HomePage() {
       if (response.ok) {
         const data = await response.json();
         // 更新本地狀態
-        setPosts(prevPosts =>
+        setAllPosts(prevPosts =>
           prevPosts.map(post =>
             post._id === postId ? { ...post, likes: data.likes } : post
           )
