@@ -41,43 +41,44 @@ export default function JobPostingDetailPage() {
   const { data: session } = useSession();
   const [posting, setPosting] = useState<JobPosting | null>(null);
   const [loading, setLoading] = useState(true);
-  const [creatingConversation, setCreatingConversation] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [liking, setLiking] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const fetchPosting = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/jobs/${params.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setPosting(data);
-
-        // 如果已登入，獲取按讚狀態
-        if (session) {
-          try {
-            const likeResponse = await fetch(`/api/jobs/${params.id}/like`);
-            if (likeResponse.ok) {
-              const { liked } = await likeResponse.json();
-              setIsLiked(liked);
-            }
-          } catch (error) {
-            console.error('Error fetching like status:', error);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching posting:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [params.id, session]);
+  const userId = session?.user?.id;
 
   useEffect(() => {
+    const fetchPosting = async () => {
+      try {
+        const response = await fetch(`/api/jobs/${params.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setPosting(data);
+
+          // 如果已登入，獲取按讚狀態
+          if (userId) {
+            try {
+              const likeResponse = await fetch(`/api/jobs/${params.id}/like`);
+              if (likeResponse.ok) {
+                const { liked } = await likeResponse.json();
+                setIsLiked(liked);
+              }
+            } catch (error) {
+              console.error('Error fetching like status:', error);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching posting:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (params.id) {
       fetchPosting();
     }
-  }, [params.id, fetchPosting]);
+  }, [params.id, userId]);
 
   const handleLike = async () => {
     if (!session) {
@@ -272,48 +273,6 @@ export default function JobPostingDetailPage() {
           <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">詳細要求</h2>
           <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{posting.requirements}</p>
         </div>
-      </div>
-
-      <div className="flex justify-end space-x-4">
-        {session && !isAuthor && (
-          <button
-            onClick={async () => {
-              if (creatingConversation) return;
-              
-              setCreatingConversation(true);
-              try {
-                const response = await fetch('/api/conversations', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ otherUserId: posting.authorId._id }),
-                });
-                
-                if (response.ok) {
-                  const conversation = await response.json();
-                  router.push(`/chat/${conversation._id}`);
-                } else {
-                  console.error('Failed to create conversation:', response.status);
-                  alert('建立對話失敗，請稍後再試');
-                }
-              } catch (error) {
-                console.error('Error creating conversation:', error);
-                alert('建立對話時發生錯誤');
-              } finally {
-                setCreatingConversation(false);
-              }
-            }}
-            disabled={creatingConversation}
-            className="bg-green-600 dark:bg-green-700 text-white px-4 py-2 rounded-md hover:bg-green-700 dark:hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {creatingConversation ? '建立對話中...' : '私訊發布者'}
-          </button>
-        )}
-        <Link
-          href={`/profile/${posting.authorId._id}`}
-          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
-        >
-          查看發布者檔案 →
-        </Link>
       </div>
     </div>
   );

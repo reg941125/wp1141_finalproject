@@ -43,6 +43,8 @@ export default function HomePage() {
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
 
 
+  const userId = session?.user?.id;
+
   const fetchPosts = useCallback(async () => {
     try {
       // 始終獲取所有貼文，不進行服務端篩選
@@ -59,7 +61,7 @@ export default function HomePage() {
       setLevelOptions(Array.from(levelSet));
 
       // 如果用戶已登入，獲取按讚狀態
-      if (session) {
+      if (userId) {
         const postIds = data.map((post: Post) => post._id);
         if (postIds.length > 0) {
           try {
@@ -82,7 +84,7 @@ export default function HomePage() {
     } finally {
       setLoading(false);
     }
-  }, [session]);
+  }, [userId]);
 
   useEffect(() => {
     fetchPosts();

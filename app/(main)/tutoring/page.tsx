@@ -48,6 +48,8 @@ export default function TutoringPage() {
   const [likedPostings, setLikedPostings] = useState<Set<string>>(new Set());
   const [likingPostings, setLikingPostings] = useState<Set<string>>(new Set());
 
+  const userId = session?.user?.id;
+
   const fetchPostings = useCallback(async () => {
     try {
       const params = new URLSearchParams();
@@ -62,7 +64,7 @@ export default function TutoringPage() {
       setPostings(data);
 
       // 如果已登入，獲取按讚狀態
-      if (session) {
+      if (userId) {
         const postingIds = data.map((posting: JobPosting) => posting._id);
         if (postingIds.length > 0) {
           try {
@@ -85,7 +87,7 @@ export default function TutoringPage() {
     } finally {
       setLoading(false);
     }
-  }, [typeFilter, tagFilter, educationFilter, hourlyRateMin, hourlyRateMax, session]);
+  }, [typeFilter, tagFilter, educationFilter, hourlyRateMin, hourlyRateMax, userId]);
 
   useEffect(() => {
     fetchPostings();

@@ -10,6 +10,7 @@ import Image from 'next/image';
 import { HiEye } from 'react-icons/hi';
 import { IoMdThumbsUp } from 'react-icons/io';
 import { BiSolidMessageCheck } from 'react-icons/bi';
+import { Edit, Trash2 } from 'lucide-react';
 
 interface Post {
   _id: string;
@@ -57,20 +58,22 @@ export default function QuestionDetailPage() {
   const [isPostLiked, setIsPostLiked] = useState(false);
   const [likedAnswers, setLikedAnswers] = useState<Set<string>>(new Set());
 
+  const userId = session?.user?.id;
+
   useEffect(() => {
     if (params.id) {
       const loadData = async () => {
         await fetchPost();
         const answersData = await fetchAnswers();
         // 獲取按讚狀態
-        if (session) {
+        if (userId) {
           const answerIds = answersData.map((answer: Answer) => answer._id);
           await fetchLikeStatus(answerIds);
         }
       };
       loadData();
     }
-  }, [params.id, session]);
+  }, [params.id, userId]);
 
   const fetchPost = async (incrementViews = true) => {
     try {
@@ -301,18 +304,20 @@ export default function QuestionDetailPage() {
         <div className="flex items-start justify-between mb-4">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex-1">{post.title}</h1>
           {isAuthor && (
-            <div className="flex space-x-2 ml-4">
+            <div className="flex items-center space-x-2 ml-4">
               <Link
                 href={`/questions/${params.id}/edit`}
-                className="px-3 py-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 border border-blue-600 dark:border-blue-400 rounded hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-md transition-colors"
+                title="編輯"
               >
-                編輯
+                <Edit className="w-5 h-5" />
               </Link>
               <button
                 onClick={handleDeletePost}
-                className="px-3 py-1 text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 border border-red-600 dark:border-red-400 rounded hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+                className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors"
+                title="刪除"
               >
-                刪除
+                <Trash2 className="w-5 h-5" />
               </button>
             </div>
           )}
