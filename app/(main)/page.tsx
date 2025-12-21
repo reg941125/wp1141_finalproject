@@ -49,6 +49,7 @@ export default function HomePage() {
   const [selectedSubject, setSelectedSubject] = useState('');
   const [levelOptions, setLevelOptions] = useState<string[]>(LEVEL_OPTIONS);
   const [subjectOptionsState, setSubjectOptionsState] = useState<string[]>(ALL_SUBJECT_OPTIONS);
+  const [showFloatingButton, setShowFloatingButton] = useState(false);
 
   useEffect(() => {
     if (
@@ -94,6 +95,22 @@ export default function HomePage() {
   useEffect(() => {
     fetchPosts();
   }, [fetchPosts]);
+
+  // 監聽滾動事件，決定是否顯示浮動按鈕
+  useEffect(() => {
+    const handleScroll = () => {
+      // 檢查頁面頂部標題區域是否還在視野中
+      // 當滾動超過 300px 時顯示浮動按鈕
+      if (window.scrollY > 300) {
+        setShowFloatingButton(true);
+      } else {
+        setShowFloatingButton(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const subjectOptions = useMemo(() => {
     if (selectedLevel && SUBJECT_OPTIONS_BY_LEVEL[selectedLevel]?.length) {
@@ -273,6 +290,20 @@ export default function HomePage() {
             </Link>
           ))}
         </div>
+      )}
+
+      {/* 浮動發問按鈕 */}
+      {session && showFloatingButton && (
+        <Link
+          href="/questions/new"
+          className="fixed bottom-8 right-8 bg-blue-600 dark:bg-blue-700 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-all hover:scale-110 duration-300 z-50 flex items-center gap-2 group"
+          title="發問"
+        >
+          <RiQuestionnaireFill className="w-6 h-6" />
+          <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap">
+            發問
+          </span>
+        </Link>
       )}
     </div>
   );

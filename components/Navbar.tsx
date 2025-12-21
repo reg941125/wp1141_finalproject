@@ -7,15 +7,36 @@ import { useEffect, useState, useRef } from 'react';
 import ThemeToggle from './ThemeToggle';
 import Image from 'next/image';
 
+interface Notification {
+  _id: string;
+  type: 'reply' | 'like';
+  content: string;
+  read: boolean;
+  createdAt: string;
+  postId: {
+    _id: string;
+    title: string;
+  };
+  triggeredBy: {
+    _id: string;
+    name: string;
+    image?: string;
+  };
+}
+
 export default function Navbar() {
   const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isGuestMenuOpen, setIsGuestMenuOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const guestMenuRef = useRef<HTMLDivElement>(null);
+  const notificationRef = useRef<HTMLDivElement>(null);
 
   const handleSignOut = async () => {
     // 立即清除未讀數量，避免顯示舊數據
@@ -56,6 +77,47 @@ export default function Navbar() {
     return () => clearInterval(interval);
   }, [session]);
 
+  // 獲取通知數量
+  useEffect(() => {
+    if (!session) return;
+
+    const fetchNotificationCount = async () => {
+      try {
+        const response = await fetch('/api/notifications/unread-count');
+        if (response.ok) {
+          const data = await response.json();
+          setNotificationCount(data.count || 0);
+        }
+      } catch (error) {
+        console.error('Error fetching notification count:', error);
+      }
+    };
+
+    fetchNotificationCount();
+    const interval = setInterval(fetchNotificationCount, 30000); // 每30秒更新一次
+    return () => clearInterval(interval);
+  }, [session]);
+
+  // 獲取通知列表
+  const fetchNotifications = async () => {
+    try {
+      const response = await fetch('/api/notifications');
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(data);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  // 當打開通知面板時獲取通知
+  useEffect(() => {
+    if (isNotificationOpen && session) {
+      fetchNotifications();
+    }
+  }, [isNotificationOpen, session]);
+
   // 點擊外部關閉下拉菜單
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -71,16 +133,53 @@ export default function Navbar() {
           setIsGuestMenuOpen(false);
         }
       }
+
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        // 檢查是否點擊了通知按鈕
+        if (!target.closest('[data-notification-button]')) {
+          setIsNotificationOpen(false);
+        }
+      }
     };
 
-    if (isDropdownOpen || isGuestMenuOpen) {
+    if (isDropdownOpen || isGuestMenuOpen || isNotificationOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isDropdownOpen, isGuestMenuOpen]);
+  }, [isDropdownOpen, isGuestMenuOpen, isNotificationOpen]);
+
+  // 標記通知為已讀
+  const markAsRead = async (notificationId: string) => {
+    try {
+      await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notificationIds: [notificationId] }),
+      });
+      fetchNotifications();
+      setNotificationCount((prev) => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  // 標記所有通知為已讀
+  const markAllAsRead = async () => {
+    try {
+      await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      fetchNotifications();
+      setNotificationCount(0);
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
+  };
 
   return (
     <nav className="bg-white dark:bg-gray-900 shadow-lg transition-colors">
@@ -144,6 +243,123 @@ export default function Navbar() {
             {session ? (
               <div className="flex items-center space-x-4">
                 <ThemeToggle />
+                
+                {/* 通知鈴鐺 */}
+                <div className="relative" ref={notificationRef}>
+                  <button
+                    data-notification-button
+                    onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                    className="relative p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    aria-label="通知"
+                  >
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                      />
+                    </svg>
+                    {notificationCount > 0 && (
+                      <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full min-w-[20px]">
+                        {notificationCount > 99 ? '99+' : notificationCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* 通知下拉面板 */}
+                  {isNotificationOpen && (
+                    <div className="absolute right-0 mt-2 w-96 max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-800 rounded-lg shadow-xl dark:shadow-gray-900/50 z-50 border border-gray-200 dark:border-gray-700 max-h-[80vh] overflow-hidden flex flex-col">
+                      {/* 標題欄 */}
+                      <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          通知
+                        </h3>
+                        {notifications.some((n) => !n.read) && (
+                          <button
+                            onClick={markAllAsRead}
+                            className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                          >
+                            全部標為已讀
+                          </button>
+                        )}
+                      </div>
+
+                      {/* 通知列表 */}
+                      <div className="overflow-y-auto flex-1">
+                        {notifications.length === 0 ? (
+                          <div className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                            目前沒有通知
+                          </div>
+                        ) : (
+                          <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                            {notifications.map((notification) => (
+                              <div
+                                key={notification._id}
+                                onClick={() => {
+                                  if (!notification.read) {
+                                    markAsRead(notification._id);
+                                  }
+                                  router.push(`/questions/${notification.postId._id}`);
+                                  setIsNotificationOpen(false);
+                                }}
+                                className={`px-4 py-3 cursor-pointer transition-colors ${
+                                  notification.read
+                                    ? 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750'
+                                    : 'bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30'
+                                }`}
+                              >
+                                <div className="flex items-start gap-3">
+                                  {/* 觸發者頭像 */}
+                                  {notification.triggeredBy.image ? (
+                                    <Image
+                                      src={notification.triggeredBy.image}
+                                      alt={notification.triggeredBy.name}
+                                      width={40}
+                                      height={40}
+                                      className="rounded-full flex-shrink-0"
+                                      unoptimized
+                                    />
+                                  ) : (
+                                    <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center flex-shrink-0">
+                                      <span className="text-gray-700 dark:text-gray-300 text-sm font-bold">
+                                        {notification.triggeredBy.name.charAt(0).toUpperCase()}
+                                      </span>
+                                    </div>
+                                  )}
+
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm text-gray-900 dark:text-gray-100">
+                                      <span className="font-semibold">
+                                        {notification.triggeredBy.name}
+                                      </span>{' '}
+                                      {notification.content}
+                                    </p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                      {new Date(notification.createdAt).toLocaleString('zh-TW')}
+                                    </p>
+                                  </div>
+
+                                  {/* 未讀標記 */}
+                                  {!notification.read && (
+                                    <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-2"></div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 {/* 用戶頭像下拉菜單 */}
                 <div className="relative" ref={dropdownRef}>
                   <button

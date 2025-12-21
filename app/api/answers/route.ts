@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import dbConnect from '@/lib/db';
 import AnswerModel from '@/lib/models/Answer';
+import PostModel from '@/lib/models/Post';
+import NotificationModel from '@/lib/models/Notification';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,6 +57,25 @@ export async function POST(request: Request) {
       content,
       images: images || [],
     });
+
+    // 創建通知給貼文作者
+    try {
+      const post = await PostModel.findById(postId).select('authorId title');
+      if (post && post.authorId.toString() !== session.user.id) {
+        // 只在回覆他人的貼文時創建通知
+        await NotificationModel.create({
+          userId: post.authorId,
+          type: 'reply',
+          postId: post._id,
+          triggeredBy: session.user.id,
+          content: `回覆了你的貼文「${post.title?.substring(0, 20) || '無標題'}${post.title && post.title.length > 20 ? '...' : ''}」`,
+          read: false,
+        });
+      }
+    } catch (notifError) {
+      // 通知創建失敗不應該影響回覆的創建
+      console.error('Error creating notification:', notifError);
+    }
 
     return NextResponse.json(answer, { status: 201 });
   } catch (error) {
