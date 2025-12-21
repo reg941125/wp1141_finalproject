@@ -20,6 +20,14 @@ const PostSchema = new Schema<Post>(
       type: [String],
       default: [],
     },
+    level: {
+      type: String,
+      default: '',
+    },
+    subject: {
+      type: String,
+      default: '',
+    },
     views: {
       type: Number,
       default: 0,
@@ -31,6 +39,14 @@ const PostSchema = new Schema<Post>(
   },
   {
     timestamps: true,
+    toJSON: {
+      transform: function(doc, ret) {
+        // 确保 level 和 subject 字段总是被包含
+        if (ret.level === undefined) ret.level = '';
+        if (ret.subject === undefined) ret.subject = '';
+        return ret;
+      }
+    }
   }
 );
 

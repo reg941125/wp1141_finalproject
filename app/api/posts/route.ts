@@ -2,20 +2,42 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import dbConnect from '@/lib/db';
 import PostModel from '@/lib/models/Post';
+import AnswerModel from '@/lib/models/Answer';
 
 export async function GET(request: Request) {
   try {
     await dbConnect();
     const { searchParams } = new URL(request.url);
     const tag = searchParams.get('tag');
+    const level = searchParams.get('level');
+    const subject = searchParams.get('subject');
 
-    const query = tag ? { tags: tag } : {};
+    const query: Record<string, any> = {};
+    if (tag) query.tags = tag;
+    if (level) query.level = { $regex: level, $options: 'i' };
+    if (subject) query.subject = { $regex: subject, $options: 'i' };
     const posts = await PostModel.find(query)
       .populate('authorId', 'name')
       .sort({ createdAt: -1 })
-      .limit(50);
+      .limit(50)
+      .lean();
 
-    return NextResponse.json(posts);
+    const postIds = posts.map((post) => post._id);
+    const answerCounts = await AnswerModel.aggregate([
+      { $match: { postId: { $in: postIds } } },
+      { $group: { _id: '$postId', count: { $sum: 1 } } },
+    ]);
+    const countMap = answerCounts.reduce<Record<string, number>>((acc, curr) => {
+      acc[curr._id.toString()] = curr.count;
+      return acc;
+    }, {});
+
+    const postsWithCounts = posts.map((post) => ({
+      ...post,
+      answersCount: countMap[post._id.toString()] || 0,
+    }));
+
+    return NextResponse.json(postsWithCounts);
   } catch (error) {
     console.error('Error fetching posts:', error);
     return NextResponse.json(
@@ -33,7 +55,7 @@ export async function POST(request: Request) {
     }
 
     await dbConnect();
-    const { title, content, tags } = await request.json();
+    const { title, content, tags, level, subject } = await request.json();
 
     if (!title || !content) {
       return NextResponse.json(
@@ -47,6 +69,8 @@ export async function POST(request: Request) {
       title,
       content,
       tags: tags || [],
+      level: level || '',
+      subject: subject || '',
     });
 
     return NextResponse.json(post, { status: 201 });

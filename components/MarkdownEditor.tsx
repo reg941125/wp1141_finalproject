@@ -350,10 +350,12 @@ export default function MarkdownEditor({
               onChange={handleTextChange}
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
-              className="w-full p-4 min-h-[400px] md:flex-1 md:min-h-0 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 border border-gray-300 dark:border-gray-600 rounded-lg font-mono text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 transition-all shadow-sm overflow-auto"
+              className="w-full p-4 min-h-[400px] md:flex-1 md:min-h-0 resize-none border border-gray-300 dark:border-gray-600 rounded-lg font-mono text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 transition-all shadow-sm overflow-auto focus:outline focus:outline-2 focus:outline-blue-500 dark:focus:outline-blue-400 focus:outline-offset-[-2px] focus:ring-0 focus:border-blue-500 dark:focus:border-blue-400"
               style={{
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-word',
+                overflowWrap: 'break-word',
+                wordWrap: 'break-word',
               }}
             />
 

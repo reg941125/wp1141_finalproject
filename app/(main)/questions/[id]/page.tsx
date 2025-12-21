@@ -1,17 +1,23 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import Link from 'next/link';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import MarkdownEditor from '@/components/MarkdownEditor';
 import Image from 'next/image';
+import { HiEye } from 'react-icons/hi';
+import { IoMdThumbsUp } from 'react-icons/io';
+import { BiSolidMessageCheck } from 'react-icons/bi';
 
 interface Post {
   _id: string;
   title: string;
   content: string;
   tags: string[];
+  level?: string;
+  subject?: string;
   authorId: {
     _id: string;
     name: string;
@@ -44,11 +50,6 @@ export default function QuestionDetailPage() {
   const [answerImages, setAnswerImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editTitle, setEditTitle] = useState('');
-  const [editContent, setEditContent] = useState('');
-  const [editTags, setEditTags] = useState('');
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (params.id) {
@@ -63,12 +64,9 @@ export default function QuestionDetailPage() {
       if (response.ok) {
         const data = await response.json();
         setPost(data);
-        setEditTitle(data.title);
-        setEditContent(data.content);
-        setEditTags(data.tags.join(', '));
         
         // Increment views only on initial load
-        if (incrementViews && !isEditing) {
+        if (incrementViews) {
           await fetch(`/api/posts/${params.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -150,33 +148,6 @@ export default function QuestionDetailPage() {
     }
   };
 
-  const handleSaveEdit = async () => {
-    if (!post || !editTitle.trim() || !editContent.trim()) return;
-
-    setSaving(true);
-    try {
-      const tagArray = editTags.split(',').map((t) => t.trim()).filter(Boolean);
-      const response = await fetch(`/api/posts/${params.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: editTitle,
-          content: editContent,
-          tags: tagArray,
-        }),
-      });
-
-      if (response.ok) {
-        setIsEditing(false);
-        fetchPost(false); // Don't increment views when refreshing after edit
-      }
-    } catch (error) {
-      console.error('Error updating post:', error);
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const handleDeletePost = async () => {
     if (!post || !confirm('確定要刪除此題目嗎？')) return;
 
@@ -195,6 +166,18 @@ export default function QuestionDetailPage() {
 
   const isAuthor = session?.user?.id === post?.authorId._id.toString();
 
+  // 獲取程度標籤的顏色類名
+  const getLevelColorClass = (level: string) => {
+    const colorMap: Record<string, string> = {
+      '國小': 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200',
+      '國中': 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200',
+      '高中': 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200',
+      '大學': 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200',
+      '研究所': 'bg-pink-100 dark:bg-pink-900 text-pink-800 dark:text-pink-200',
+    };
+    return colorMap[level] || 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200';
+  };
+
   if (loading) {
     return <div className="max-w-4xl mx-auto px-4 py-8 text-gray-900 dark:text-gray-100">載入中...</div>;
   }
@@ -206,96 +189,68 @@ export default function QuestionDetailPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 p-6 mb-6 transition-colors">
-        {isEditing ? (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                標題
-              </label>
-              <input
-                type="text"
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors"
-                placeholder="請輸入題目標題"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                內容
-              </label>
-              <MarkdownEditor
-                value={editContent}
-                onChange={setEditContent}
-                placeholder="輸入題目內容..."
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                標籤（以逗號分隔）
-              </label>
-              <input
-                type="text"
-                value={editTags}
-                onChange={(e) => setEditTags(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors"
-                placeholder="例如：數學, 微積分, 高中"
-              />
-            </div>
-            <div className="flex justify-end space-x-4">
-              <button
-                onClick={() => {
-                  setIsEditing(false);
-                  setEditTitle(post.title);
-                  setEditContent(post.content);
-                  setEditTags(post.tags.join(', '));
-                }}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
+        <div className="flex items-start justify-between mb-4">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex-1">{post.title}</h1>
+          {isAuthor && (
+            <div className="flex space-x-2 ml-4">
+              <Link
+                href={`/questions/${params.id}/edit`}
+                className="px-3 py-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 border border-blue-600 dark:border-blue-400 rounded hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
               >
-                取消
-              </button>
+                編輯
+              </Link>
               <button
-                onClick={handleSaveEdit}
-                disabled={saving || !editTitle.trim() || !editContent.trim()}
-                className="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 transition-colors"
+                onClick={handleDeletePost}
+                className="px-3 py-1 text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 border border-red-600 dark:border-red-400 rounded hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
               >
-                {saving ? '儲存中...' : '儲存'}
+                刪除
               </button>
+            </div>
+          )}
+        </div>
+        <div className="flex items-center justify-between mb-4 text-sm text-gray-500 dark:text-gray-400">
+          <div className="flex items-center space-x-4">
+            <span>{post.authorId?.name || '匿名'}</span>
+            <span>{new Date(post.createdAt).toLocaleDateString('zh-TW')}</span>
+          </div>
+          <div className="flex items-center space-x-4 text-gray-600 dark:text-gray-300">
+            <div className="flex items-center space-x-1">
+              <HiEye className="w-4 h-4" />
+              <span>{post.views}</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <IoMdThumbsUp className="w-4 h-4" />
+              <span>{post.likes}</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <BiSolidMessageCheck className="w-4 h-4" />
+              <span>{answers.length}</span>
             </div>
           </div>
-        ) : (
-          <>
-            <div className="flex items-start justify-between mb-4">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex-1">{post.title}</h1>
-              {isAuthor && (
-                <div className="flex space-x-2 ml-4">
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="px-3 py-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 border border-blue-600 dark:border-blue-400 rounded hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
-                  >
-                    編輯
-                  </button>
-                  <button
-                    onClick={handleDeletePost}
-                    className="px-3 py-1 text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 border border-red-600 dark:border-red-400 rounded hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
-                  >
-                    刪除
-                  </button>
-                </div>
+        </div>
+        {(() => {
+          const level = post.level || '';
+          const subject = post.subject || '';
+          const tags = post.tags || [];
+          const hasTags = (level && level.trim()) || (subject && subject.trim()) || (tags.length > 0);
+          
+          if (!hasTags) return null;
+          
+          return (
+            <div className="flex space-x-2 mb-4 flex-wrap gap-2">
+              {level && level.trim() && (
+                <span
+                  className={`px-2 py-1 rounded text-sm ${getLevelColorClass(level)}`}
+                >
+                  {level}
+                </span>
               )}
-            </div>
-            <div className="flex items-center justify-between mb-4 text-sm text-gray-500 dark:text-gray-400">
-              <div className="flex items-center space-x-4">
-                <span>{post.authorId?.name || '匿名'}</span>
-                <span>{new Date(post.createdAt).toLocaleDateString('zh-TW')}</span>
-              </div>
-              <div className="flex items-center space-x-4">
-                <span>👁️ {post.views}</span>
-                <span>👍 {post.likes}</span>
-              </div>
-            </div>
-            <div className="flex space-x-2 mb-4">
-              {post.tags.map((tag) => (
+              {subject && subject.trim() && (
+                <span className="px-2 py-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 rounded text-sm">
+                  {subject}
+                </span>
+              )}
+              {tags.length > 0 && tags.map((tag) => (
                 <span
                   key={tag}
                   className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded text-sm"
@@ -304,17 +259,17 @@ export default function QuestionDetailPage() {
                 </span>
               ))}
             </div>
-            <div className="prose max-w-none">
-              <MarkdownRenderer content={post.content} />
-            </div>
-          </>
-        )}
+          );
+        })()}
+        <div className="prose max-w-none">
+          <MarkdownRenderer content={post.content} />
+        </div>
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 p-6 mb-6 transition-colors">
-        <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-gray-100">解答 ({answers.length})</h2>
+        <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-gray-100"> 回答 ({answers.length})</h2>
         {answers.length === 0 ? (
-          <p className="text-gray-500 dark:text-gray-400">尚無解答</p>
+          <p className="text-gray-500 dark:text-gray-400">尚未有人回答</p>
         ) : (
           <div className="space-y-6">
             {answers.map((answer) => (
@@ -343,7 +298,10 @@ export default function QuestionDetailPage() {
                   </div>
                 )}
                 <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-                  <button className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">👍 {answer.likes}</button>
+                  <button className="flex items-center space-x-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    <IoMdThumbsUp className="w-4 h-4" />
+                    <span>{answer.likes}</span>
+                  </button>
                 </div>
               </div>
             ))}
@@ -353,7 +311,7 @@ export default function QuestionDetailPage() {
 
       {session && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 p-6 transition-colors">
-          <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">發表解答</h2>
+          <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">回答問題</h2>
           <form onSubmit={handleSubmitAnswer}>
             <MarkdownEditor
               value={answerContent}

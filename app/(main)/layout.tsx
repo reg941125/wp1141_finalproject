@@ -2,14 +2,10 @@
 
 import { SessionProvider } from 'next-auth/react';
 import Navbar from '@/components/Navbar';
-import { usePathname } from 'next/navigation';
 
 function MainContent({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const isProfilePage = pathname?.startsWith('/profile');
-  
   return (
-    <main className={`min-h-screen transition-colors ${isProfilePage ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-950'}`}>
+    <main className="min-h-screen transition-colors bg-transparent">
       {children}
     </main>
   );
@@ -23,7 +19,9 @@ export default function MainLayout({
   return (
     <SessionProvider>
       <Navbar />
-      <MainContent>{children}</MainContent>
+      <div className="max-w-4xl mx-auto">
+        <MainContent>{children}</MainContent>
+      </div>
     </SessionProvider>
   );
 }

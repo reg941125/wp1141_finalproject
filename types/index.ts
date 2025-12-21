@@ -20,6 +20,9 @@ export interface Post {
   title: string;
   content: string;
   tags: string[];
+  level?: string;
+  subject?: string;
+  answersCount?: number;
   createdAt: Date;
   updatedAt: Date;
   views: number;

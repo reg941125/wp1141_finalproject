@@ -1,15 +1,36 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
+import Combobox from '@/components/Combobox';
+import { HiEye } from 'react-icons/hi';
+import { IoMdThumbsUp } from 'react-icons/io';
+import { BiSolidMessageCheck } from 'react-icons/bi';
+import { RiQuestionnaireFill } from "react-icons/ri";
+
+const LEVEL_OPTIONS = ['國小', '國中', '高中', '大學', '研究所'];
+const SUBJECT_OPTIONS_BY_LEVEL: Record<string, string[]> = {
+  '國小': ['國語', '英文', '數學', '自然', '社會'],
+  '國中': ['國文', '英文', '數學', '生物', '理化', '地科', '歷史', '地理', '公民'],
+  '高中': ['國文', '英文', '數學', '物理', '化學', '生物', '地科', '歷史', '地理', '公民'],
+  '大學': [],
+  '研究所': [],
+  '其他': [],
+};
+const ALL_SUBJECT_OPTIONS = Array.from(
+  new Set(Object.values(SUBJECT_OPTIONS_BY_LEVEL).flat().filter(Boolean))
+);
 
 interface Post {
   _id: string;
   title: string;
   content: string;
   tags: string[];
+  level?: string;
+  subject?: string;
+  answersCount?: number;
   authorId: {
     name: string;
   };
@@ -24,25 +45,67 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
+  const [selectedLevel, setSelectedLevel] = useState('');
+  const [selectedSubject, setSelectedSubject] = useState('');
+  const [levelOptions, setLevelOptions] = useState<string[]>(LEVEL_OPTIONS);
+  const [subjectOptionsState, setSubjectOptionsState] = useState<string[]>(ALL_SUBJECT_OPTIONS);
 
   useEffect(() => {
     fetchPosts();
-  }, [selectedTag]);
+  }, [selectedTag, selectedLevel, selectedSubject]);
+
+  useEffect(() => {
+    if (
+      selectedLevel &&
+      selectedSubject &&
+      !SUBJECT_OPTIONS_BY_LEVEL[selectedLevel]?.includes(selectedSubject)
+    ) {
+      setSelectedSubject('');
+    }
+  }, [selectedLevel, selectedSubject]);
 
   const fetchPosts = async () => {
     try {
-      const url = selectedTag
-        ? `/api/posts?tag=${selectedTag}`
-        : '/api/posts';
+      const params = new URLSearchParams();
+      if (selectedTag) params.append('tag', selectedTag);
+      if (selectedLevel) params.append('level', selectedLevel);
+      if (selectedSubject) params.append('subject', selectedSubject);
+      const queryString = params.toString();
+      const url = queryString ? `/api/posts?${queryString}` : '/api/posts';
       const response = await fetch(url);
       const data = await response.json();
       setPosts(data);
+      // 收集現有的程度/科目，補充到下拉清單
+      const levelSet = new Set(LEVEL_OPTIONS);
+      const subjectSet = new Set(ALL_SUBJECT_OPTIONS);
+      data.forEach((post: Post) => {
+        if (post.level && post.level.trim()) {
+          levelSet.add(post.level.trim());
+        }
+        if (post.subject && post.subject.trim()) {
+          subjectSet.add(post.subject.trim());
+        }
+      });
+      setLevelOptions(Array.from(levelSet));
+      setSubjectOptionsState(Array.from(subjectSet));
     } catch (error) {
       console.error('Error fetching posts:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  const subjectOptions = useMemo(() => {
+    if (selectedLevel && SUBJECT_OPTIONS_BY_LEVEL[selectedLevel]?.length) {
+      const levelSubjects = SUBJECT_OPTIONS_BY_LEVEL[selectedLevel];
+      const extras = posts
+        .filter((post) => post.level === selectedLevel && post.subject && post.subject.trim())
+        .map((post) => post.subject!.trim())
+        .filter((subject) => !levelSubjects.includes(subject));
+      return Array.from(new Set([...levelSubjects, ...extras]));
+    }
+    return subjectOptionsState;
+  }, [selectedLevel, posts, subjectOptionsState]);
 
   const filteredPosts = posts.filter((post) =>
     post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -58,8 +121,9 @@ export default function HomePage() {
         {session && (
           <Link
             href="/questions/new"
-            className="bg-blue-600 dark:bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
+            className="bg-blue-600 dark:bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-all flex items-center gap-2 hover:scale-105 duration-300"
           >
+            <RiQuestionnaireFill className="scale-125" />
             發問
           </Link>
         )}
@@ -71,8 +135,38 @@ export default function HomePage() {
           placeholder="搜尋題目..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 transition-colors"
+          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline focus:outline-2 focus:outline-blue-500 dark:focus:outline-blue-400 focus:outline-offset-[-2px] focus:ring-0 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 transition-colors"
         />
+        <div className="flex flex-row gap-4">
+          <div className="w-full lg:w-48">
+            <Combobox
+              value={selectedLevel}
+              onChange={setSelectedLevel}
+              options={levelOptions}
+              placeholder="篩選程度"
+            />
+          </div>
+          <div className="w-full lg:w-48">
+            <Combobox
+              value={selectedSubject}
+              onChange={setSelectedSubject}
+              options={subjectOptions}
+              placeholder="篩選科目"
+            />
+          </div>
+          {(selectedLevel || selectedSubject) && (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedLevel('');
+                setSelectedSubject('');
+              }}
+              className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              清除篩選
+            </button>
+          )}
+        </div>
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setSelectedTag('')}
@@ -120,18 +214,38 @@ export default function HomePage() {
               <div className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
                 <MarkdownRenderer content={post.content.substring(0, 200)} />
               </div>
-              <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-                <div className="flex items-center space-x-4">
-                  <span>{post.authorId?.name || '匿名'}</span>
-                  <span>{new Date(post.createdAt).toLocaleDateString('zh-TW')}</span>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <span>👁️ {post.views}</span>
-                    <span>👍 {post.likes}</span>
-                  </div>
-                  <div className="flex space-x-2">
-                    {post.tags.map((tag) => (
+              <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 gap-4">
+                <span>{post.authorId?.name || '匿名'}</span>
+                <span>{new Date(post.createdAt).toLocaleDateString('zh-TW')}</span>
+              </div>
+              {(() => {
+                const level = post.level || '';
+                const subject = post.subject || '';
+                const tags = post.tags || [];
+                const hasLevel = Boolean(level && level.trim());
+                const hasSubject = Boolean(subject && subject.trim());
+                const hasTagList = tags.length > 0;
+
+                return (
+                  <div className="flex flex-wrap gap-2 mt-2 items-center">
+                    {hasLevel && (
+                      <span className={`px-2 py-1 rounded text-xs ${
+                        level === '國小' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' :
+                        level === '國中' ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' :
+                        level === '高中' ? 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200' :
+                        level === '大學' ? 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200' :
+                        level === '研究所' ? 'bg-pink-100 dark:bg-pink-900 text-pink-800 dark:text-pink-200' :
+                        'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
+                      }`}>
+                        {level}
+                      </span>
+                    )}
+                    {hasSubject && (
+                      <span className="px-2 py-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 rounded text-xs">
+                        {subject}
+                      </span>
+                    )}
+                    {hasTagList && tags.map((tag) => (
                       <span
                         key={tag}
                         className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded text-xs"
@@ -139,9 +253,23 @@ export default function HomePage() {
                         {tag}
                       </span>
                     ))}
+                    <div className="ml-auto flex items-center space-x-4 text-gray-600 dark:text-gray-300">
+                      <div className="flex items-center space-x-1">
+                        <HiEye className="w-4 h-4" />
+                        <span>{post.views}</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <IoMdThumbsUp className="w-4 h-4" />
+                        <span>{post.likes}</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <BiSolidMessageCheck className="w-4 h-4" />
+                        <span>{post.answersCount ?? 0}</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                );
+              })()}
             </Link>
           ))}
         </div>

@@ -38,14 +38,13 @@ export async function PUT(
     }
 
     const updates = await request.json();
-    
     // Views can be updated by anyone (for view counting)
     if (updates.views !== undefined) {
       post.views = updates.views;
     }
     
     // Other fields require authentication and ownership
-    if (updates.title !== undefined || updates.content !== undefined || updates.tags !== undefined) {
+    if (updates.title !== undefined || updates.content !== undefined || updates.tags !== undefined || updates.level !== undefined || updates.subject !== undefined) {
       const session = await auth();
       if (!session?.user?.id) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -58,6 +57,8 @@ export async function PUT(
       if (updates.title !== undefined) post.title = updates.title;
       if (updates.content !== undefined) post.content = updates.content;
       if (updates.tags !== undefined) post.tags = updates.tags;
+      if (updates.level !== undefined) post.level = updates.level;
+      if (updates.subject !== undefined) post.subject = updates.subject;
     }
     
     if (updates.likes !== undefined) {
@@ -66,7 +67,9 @@ export async function PUT(
     
     await post.save();
     
+    // 重新查询确保获取最新数据
     const updatedPost = await PostModel.findById(params.id).populate('authorId', 'name');
+    
     return NextResponse.json(updatedPost);
   } catch (error) {
     console.error('Error updating post:', error);
