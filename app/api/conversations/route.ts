@@ -14,8 +14,11 @@ export async function GET() {
     }
 
     await dbConnect();
+    // 只返回有消息的對話（lastMessageAt 存在）
+    // 這樣接收方只有在收到第一條消息後才會看到聊天室
     const conversations = await ConversationModel.find({
       participants: session.user.id,
+      lastMessageAt: { $exists: true, $ne: null }, // 只顯示有消息的對話
     })
       .populate('participants', 'name image username')
       .populate('lastMessageBy', 'name image username')

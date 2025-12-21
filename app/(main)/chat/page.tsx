@@ -55,6 +55,18 @@ export default function ChatPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [firstUnreadMessageId, setFirstUnreadMessageId] = useState<string | null>(null);
 
+  const fetchSingleConversation = useCallback(async (id: string) => {
+    try {
+      const response = await fetch(`/api/conversations/${id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSelectedConversation(data);
+      }
+    } catch (error) {
+      console.error('Error fetching single conversation:', error);
+    }
+  }, []);
+
   const fetchConversations = useCallback(async () => {
     try {
       const response = await fetch('/api/conversations');
@@ -67,6 +79,9 @@ export default function ChatPage() {
           const conv = data.find((c: Conversation) => c._id === conversationId);
           if (conv) {
             setSelectedConversation(conv);
+          } else {
+            // 如果在列表中找不到（可能是新創建的還沒有消息），直接獲取該對話
+            fetchSingleConversation(conversationId);
           }
         }
       }
@@ -75,7 +90,7 @@ export default function ChatPage() {
     } finally {
       setLoading(false);
     }
-  }, [conversationId]);
+  }, [conversationId, fetchSingleConversation]);
 
   const fetchUnreadCounts = useCallback(async () => {
     try {

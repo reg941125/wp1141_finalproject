@@ -53,6 +53,8 @@ export default function HomePage() {
   const [levelOptions, setLevelOptions] = useState<string[]>(LEVEL_OPTIONS);
   const [subjectOptionsState, setSubjectOptionsState] = useState<string[]>(ALL_SUBJECT_OPTIONS);
   const [showFloatingButton, setShowFloatingButton] = useState(false);
+  const [likingPosts, setLikingPosts] = useState<Set<string>>(new Set());
+  const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (
@@ -88,12 +90,32 @@ export default function HomePage() {
       });
       setLevelOptions(Array.from(levelSet));
       setSubjectOptionsState(Array.from(subjectSet));
+
+      // 如果用戶已登入，獲取按讚狀態
+      if (session) {
+        const postIds = data.map((post: Post) => post._id);
+        if (postIds.length > 0) {
+          try {
+            const likesResponse = await fetch('/api/posts/likes-status', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ postIds }),
+            });
+            if (likesResponse.ok) {
+              const { likedPostIds } = await likesResponse.json();
+              setLikedPosts(new Set(likedPostIds));
+            }
+          } catch (error) {
+            console.error('Error fetching likes status:', error);
+          }
+        }
+      }
     } catch (error) {
       console.error('Error fetching posts:', error);
     } finally {
       setLoading(false);
     }
-  }, [selectedTag, selectedLevel, selectedSubject]);
+  }, [selectedTag, selectedLevel, selectedSubject, session]);
 
   useEffect(() => {
     fetchPosts();
@@ -133,6 +155,60 @@ export default function HomePage() {
   );
 
   const allTags = Array.from(new Set(posts.flatMap((post) => post.tags)));
+
+  // 處理按讚
+  const handleLike = async (postId: string, e: React.MouseEvent) => {
+    e.preventDefault(); // 防止觸發 Link 導航
+    e.stopPropagation(); // 防止事件冒泡
+
+    if (!session) {
+      alert('請先登入才能按讚');
+      return;
+    }
+
+    if (likingPosts.has(postId)) {
+      return; // 正在處理中，防止重複點擊
+    }
+
+    setLikingPosts(prev => new Set(prev).add(postId));
+
+    try {
+      const response = await fetch(`/api/posts/${postId}/like`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // 更新本地狀態
+        setPosts(prevPosts =>
+          prevPosts.map(post =>
+            post._id === postId ? { ...post, likes: data.likes } : post
+          )
+        );
+        // 更新按讚狀態
+        setLikedPosts(prev => {
+          const newSet = new Set(prev);
+          if (data.isLiked) {
+            newSet.add(postId);
+          } else {
+            newSet.delete(postId);
+          }
+          return newSet;
+        });
+      } else {
+        alert('操作失敗，請稍後再試');
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      alert('操作失敗，請稍後再試');
+    } finally {
+      setLikingPosts(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(postId);
+        return newSet;
+      });
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -306,10 +382,19 @@ export default function HomePage() {
                         <HiEye className="w-4 h-4" />
                         <span>{post.views}</span>
                       </div>
-                      <div className="flex items-center space-x-1">
-                        <IoMdThumbsUp className="w-4 h-4" />
+                      <button
+                        onClick={(e) => handleLike(post._id, e)}
+                        disabled={likingPosts.has(post._id)}
+                        className={`flex items-center space-x-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                          likedPosts.has(post._id)
+                            ? 'text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300'
+                            : 'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+                        }`}
+                        title={likedPosts.has(post._id) ? '取消按讚' : '按讚'}
+                      >
+                        <IoMdThumbsUp className={`w-4 h-4 ${likedPosts.has(post._id) ? 'fill-current' : ''}`} />
                         <span>{post.likes}</span>
-                      </div>
+                      </button>
                       <div className="flex items-center space-x-1">
                         <BiSolidMessageCheck className="w-4 h-4" />
                         <span>{post.answersCount ?? 0}</span>

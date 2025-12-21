@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -52,6 +52,7 @@ const educationLevelMap = {
 
 export default function ProfilePage() {
   const params = useParams();
+  const router = useRouter();
   const { data: session } = useSession();
   const [user, setUser] = useState<User | null>(null);
   const [questionFiles, setQuestionFiles] = useState<QuestionFile[]>([]);
@@ -59,6 +60,8 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [followingCount, setFollowingCount] = useState(0);
   const [followersCount, setFollowersCount] = useState(0);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
 
   useEffect(() => {
     if (params.userId) {
@@ -68,18 +71,17 @@ export default function ProfilePage() {
 
   const fetchProfile = async () => {
     try {
-      const [userRes, filesRes, jobsRes] = await Promise.all([
+      const [userRes, filesRes, jobsRes, followersRes, followStatusRes] = await Promise.all([
         fetch(`/api/users/${params.userId}`),
         fetch(`/api/questions?userId=${params.userId}`),
         fetch(`/api/jobs?userId=${params.userId}`),
+        fetch(`/api/users/${params.userId}/followers`),
+        session ? fetch(`/api/users/${params.userId}/follow`) : Promise.resolve(null),
       ]);
 
       if (userRes.ok) {
         const userData = await userRes.json();
         setUser(userData);
-        // 暫時使用固定值，之後可以從 API 取得
-        setFollowingCount(0);
-        setFollowersCount(0);
       }
 
       if (filesRes.ok) {
@@ -91,10 +93,75 @@ export default function ProfilePage() {
         const jobsData = await jobsRes.json();
         setJobPostings(jobsData.filter((j: JobPosting) => j.isActive));
       }
+
+      if (followersRes.ok) {
+        const followData = await followersRes.json();
+        setFollowersCount(followData.followersCount || 0);
+        setFollowingCount(followData.followingCount || 0);
+      }
+
+      if (followStatusRes && followStatusRes.ok) {
+        const statusData = await followStatusRes.json();
+        setIsFollowing(statusData.following || false);
+      }
     } catch (error) {
       console.error('Error fetching profile:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 處理追蹤/取消追蹤
+  const handleFollow = async () => {
+    if (!session) {
+      router.push('/login');
+      return;
+    }
+
+    setFollowLoading(true);
+    try {
+      const method = isFollowing ? 'DELETE' : 'POST';
+      const response = await fetch(`/api/users/${params.userId}/follow`, {
+        method,
+      });
+
+      if (response.ok) {
+        setIsFollowing(!isFollowing);
+        setFollowersCount((prev) => (isFollowing ? prev - 1 : prev + 1));
+      }
+    } catch (error) {
+      console.error('Error toggling follow:', error);
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
+  // 處理私訊
+  const handleMessage = async () => {
+    if (!session) {
+      router.push('/login');
+      return;
+    }
+
+    try {
+      // 創建或獲取對話
+      const response = await fetch('/api/conversations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ otherUserId: params.userId }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // API 返回的對話對象中包含 _id 字段
+        router.push(`/chat/${data._id}`);
+      } else {
+        console.error('Failed to create/get conversation');
+        alert('無法開啟對話，請稍後再試');
+      }
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+      alert('無法開啟對話，請稍後再試');
     }
   };
 
@@ -162,15 +229,40 @@ export default function ProfilePage() {
             )}
           </div>
           
-          {/* Edit Profile Button */}
-          {isOwnProfile && (
-            <Link
-              href="/profile/edit"
-              className="mt-4 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-full text-sm font-semibold text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-            >
-              編輯個人檔案
-            </Link>
-          )}
+          {/* Action Buttons */}
+          <div className="mt-4 flex gap-2">
+            {isOwnProfile ? (
+              <Link
+                href="/profile/edit"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-full text-sm font-semibold text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                編輯個人檔案
+              </Link>
+            ) : (
+              <>
+                {/* 追蹤按鈕 */}
+                <button
+                  onClick={handleFollow}
+                  disabled={followLoading}
+                  className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+                    isFollowing
+                      ? 'border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 hover:border-red-300 dark:hover:border-red-600'
+                      : 'bg-blue-600 dark:bg-blue-700 text-white hover:bg-blue-700 dark:hover:bg-blue-600'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  {followLoading ? '處理中...' : isFollowing ? '追蹤中' : '追蹤'}
+                </button>
+
+                {/* 私訊按鈕 */}
+                <button
+                  onClick={handleMessage}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-full text-sm font-semibold text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  私訊
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* User Info */}

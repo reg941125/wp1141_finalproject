@@ -21,6 +21,7 @@ interface Post {
   authorId: {
     _id: string;
     name: string;
+    image?: string;
   };
   createdAt: string;
   views: number;
@@ -34,6 +35,7 @@ interface Answer {
   authorId: {
     _id: string;
     name: string;
+    image?: string;
   };
   createdAt: string;
   likes: number;
@@ -50,13 +52,25 @@ export default function QuestionDetailPage() {
   const [answerImages, setAnswerImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [liking, setLiking] = useState(false);
+  const [likingAnswers, setLikingAnswers] = useState<Set<string>>(new Set());
+  const [isPostLiked, setIsPostLiked] = useState(false);
+  const [likedAnswers, setLikedAnswers] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (params.id) {
-      fetchPost();
-      fetchAnswers();
+      const loadData = async () => {
+        await fetchPost();
+        const answersData = await fetchAnswers();
+        // 獲取按讚狀態
+        if (session) {
+          const answerIds = answersData.map((answer: Answer) => answer._id);
+          await fetchLikeStatus(answerIds);
+        }
+      };
+      loadData();
     }
-  }, [params.id]);
+  }, [params.id, session]);
 
   const fetchPost = async (incrementViews = true) => {
     try {
@@ -87,9 +101,29 @@ export default function QuestionDetailPage() {
       if (response.ok) {
         const data = await response.json();
         setAnswers(data);
+        return data;
       }
+      return [];
     } catch (error) {
       console.error('Error fetching answers:', error);
+      return [];
+    }
+  };
+
+  const fetchLikeStatus = async (answerIds: string[]) => {
+    if (!session) return;
+    try {
+      const answerIdsParam = answerIds.join(',');
+      const response = await fetch(
+        `/api/posts/${params.id}/like-status?answerIds=${answerIdsParam}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setIsPostLiked(data.isPostLiked);
+        setLikedAnswers(new Set(data.likedAnswerIds));
+      }
+    } catch (error) {
+      console.error('Error fetching like status:', error);
     }
   };
 
@@ -164,6 +198,81 @@ export default function QuestionDetailPage() {
     }
   };
 
+  const handleLike = async () => {
+    if (!session) {
+      alert('請先登入才能按讚');
+      return;
+    }
+
+    if (liking) return;
+
+    setLiking(true);
+    try {
+      const response = await fetch(`/api/posts/${params.id}/like`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPost(prevPost => prevPost ? { ...prevPost, likes: data.likes } : null);
+        setIsPostLiked(data.isLiked);
+      } else {
+        alert('操作失敗，請稍後再試');
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      alert('操作失敗，請稍後再試');
+    } finally {
+      setLiking(false);
+    }
+  };
+
+  const handleAnswerLike = async (answerId: string) => {
+    if (!session) {
+      alert('請先登入才能按讚');
+      return;
+    }
+
+    if (likingAnswers.has(answerId)) return;
+
+    setLikingAnswers(prev => new Set(prev).add(answerId));
+    try {
+      const response = await fetch(`/api/answers/${answerId}/like`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAnswers(prevAnswers =>
+          prevAnswers.map(answer =>
+            answer._id === answerId ? { ...answer, likes: data.likes } : answer
+          )
+        );
+        // 更新按讚狀態
+        setLikedAnswers(prev => {
+          const newSet = new Set(prev);
+          if (data.isLiked) {
+            newSet.add(answerId);
+          } else {
+            newSet.delete(answerId);
+          }
+          return newSet;
+        });
+      } else {
+        alert('操作失敗，請稍後再試');
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      alert('操作失敗，請稍後再試');
+    } finally {
+      setLikingAnswers(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(answerId);
+        return newSet;
+      });
+    }
+  };
+
   const isAuthor = session?.user?.id === post?.authorId._id.toString();
 
   // 獲取程度標籤的顏色類名
@@ -210,23 +319,55 @@ export default function QuestionDetailPage() {
         </div>
         <div className="flex items-center justify-between mb-4 text-sm text-gray-500 dark:text-gray-400">
           <div className="flex items-center space-x-4">
-            <span>{post.authorId?.name || '匿名'}</span>
+            <Link
+              href={`/profile/${post.authorId?._id}`}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            >
+              {post.authorId?.image ? (
+                <Image
+                  src={post.authorId.image}
+                  alt={post.authorId.name}
+                  width={32}
+                  height={32}
+                  className="rounded-full object-cover"
+                  unoptimized
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+                  <span className="text-gray-700 dark:text-gray-300 text-sm font-bold">
+                    {post.authorId?.name?.charAt(0).toUpperCase() || '?'}
+                  </span>
+                </div>
+              )}
+              <span className="text-gray-700 dark:text-gray-300 font-medium hover:text-blue-600 dark:hover:text-blue-400">
+                {post.authorId?.name || '匿名'}
+              </span>
+            </Link>
             <span>{new Date(post.createdAt).toLocaleDateString('zh-TW')}</span>
           </div>
-          <div className="flex items-center space-x-4 text-gray-600 dark:text-gray-300">
-            <div className="flex items-center space-x-1">
-              <HiEye className="w-4 h-4" />
-              <span>{post.views}</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <IoMdThumbsUp className="w-4 h-4" />
-              <span>{post.likes}</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <BiSolidMessageCheck className="w-4 h-4" />
-              <span>{answers.length}</span>
-            </div>
-          </div>
+              <div className="flex items-center space-x-4 text-gray-600 dark:text-gray-300">
+                <div className="flex items-center space-x-1">
+                  <HiEye className="w-4 h-4" />
+                  <span>{post.views}</span>
+                </div>
+                <button
+                  onClick={handleLike}
+                  disabled={liking}
+                  className={`flex items-center space-x-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                    isPostLiked
+                      ? 'text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300'
+                      : 'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+                  }`}
+                  title={isPostLiked ? '取消按讚' : '按讚'}
+                >
+                  <IoMdThumbsUp className={`w-4 h-4 ${isPostLiked ? 'fill-current' : ''}`} />
+                  <span>{post.likes}</span>
+                </button>
+                <div className="flex items-center space-x-1">
+                  <BiSolidMessageCheck className="w-4 h-4" />
+                  <span>{answers.length}</span>
+                </div>
+              </div>
         </div>
         {(() => {
           const level = post.level || '';
@@ -275,7 +416,30 @@ export default function QuestionDetailPage() {
             {answers.map((answer) => (
               <div key={answer._id} className="border-b dark:border-gray-700 pb-6 last:border-b-0">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium text-gray-900 dark:text-gray-100">{answer.authorId?.name || '匿名'}</span>
+                  <Link
+                    href={`/profile/${answer.authorId?._id}`}
+                    className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                  >
+                    {answer.authorId?.image ? (
+                      <Image
+                        src={answer.authorId.image}
+                        alt={answer.authorId.name}
+                        width={32}
+                        height={32}
+                        className="rounded-full object-cover"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+                        <span className="text-gray-700 dark:text-gray-300 text-sm font-bold">
+                          {answer.authorId?.name?.charAt(0).toUpperCase() || '?'}
+                        </span>
+                      </div>
+                    )}
+                    <span className="font-medium text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400">
+                      {answer.authorId?.name || '匿名'}
+                    </span>
+                  </Link>
                   <span className="text-sm text-gray-500 dark:text-gray-400">
                     {new Date(answer.createdAt).toLocaleDateString('zh-TW')}
                   </span>
@@ -297,12 +461,21 @@ export default function QuestionDetailPage() {
                     ))}
                   </div>
                 )}
-                <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-                  <button className="flex items-center space-x-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                    <IoMdThumbsUp className="w-4 h-4" />
-                    <span>{answer.likes}</span>
-                  </button>
-                </div>
+                    <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                      <button
+                        onClick={() => handleAnswerLike(answer._id)}
+                        disabled={likingAnswers.has(answer._id)}
+                        className={`flex items-center space-x-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                          likedAnswers.has(answer._id)
+                            ? 'text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300'
+                            : 'text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+                        }`}
+                        title={likedAnswers.has(answer._id) ? '取消按讚' : '按讚'}
+                      >
+                        <IoMdThumbsUp className={`w-4 h-4 ${likedAnswers.has(answer._id) ? 'fill-current' : ''}`} />
+                        <span>{answer.likes}</span>
+                      </button>
+                    </div>
               </div>
             ))}
           </div>
