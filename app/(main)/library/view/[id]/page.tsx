@@ -72,7 +72,7 @@ export default function ViewFilePage() {
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center py-12 text-gray-900 dark:text-white">載入中...</div>
       </div>
     );
@@ -80,7 +80,7 @@ export default function ViewFilePage() {
 
   if (!file) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center py-12">
           <p className="text-gray-600 dark:text-gray-400">找不到此題目或筆記</p>
           <Link
@@ -97,7 +97,7 @@ export default function ViewFilePage() {
   const isOwner = session?.user?.id === file.authorId._id;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-6">
         <button
           onClick={() => router.back()}

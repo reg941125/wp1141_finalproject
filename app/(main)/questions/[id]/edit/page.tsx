@@ -52,7 +52,7 @@ export default function EditQuestionPage() {
   // 在檢查 session 時不顯示任何內容
   if (status === 'loading' || loading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8 text-gray-900 dark:text-white">
+      <div className="px-4 py-8 text-gray-900 dark:text-white">
         載入中...
       </div>
     );
@@ -61,7 +61,7 @@ export default function EditQuestionPage() {
   if (status === 'unauthenticated') {
     router.push('/login');
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8 text-gray-900 dark:text-white">
+      <div className="px-4 py-8 text-gray-900 dark:text-white">
         重定向中...
       </div>
     );
@@ -69,7 +69,7 @@ export default function EditQuestionPage() {
 
   if (!post) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8 text-gray-900 dark:text-white">
+      <div className="px-4 py-8 text-gray-900 dark:text-white">
         題目不存在
       </div>
     );
@@ -112,7 +112,7 @@ export default function EditQuestionPage() {
   };
 
   return (
-    <div className="max-w-4xl md:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
       <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-gray-100">編輯題目</h1>
       <QuestionForm
         initialTitle={post.title}

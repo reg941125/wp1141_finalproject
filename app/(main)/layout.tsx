@@ -1,6 +1,7 @@
 'use client';
 
 import { SessionProvider } from 'next-auth/react';
+import { usePathname } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 
 function MainContent({ children }: { children: React.ReactNode }) {

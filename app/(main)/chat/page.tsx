@@ -290,17 +290,17 @@ export default function ChatPage() {
                         )}
                       </div>
                       {conversation.lastMessage && (
-                        <div className="flex items-center justify-between">
-                          <p className={`text-sm truncate ${
+                        <div className="flex items-center justify-between gap-2">
+                          <p className={`text-sm truncate flex-1 min-w-0 ${
                             unreadCount > 0 
                               ? 'text-gray-900 dark:text-white font-medium' 
                               : 'text-gray-500 dark:text-gray-400'
                           }`}>
-                            {isLastMessageByMe && '你: '}
-                            {conversation.lastMessage}
+                            {isLastMessageByMe && <span className="text-gray-500 dark:text-gray-400">你: </span>}
+                            <span className="truncate">{conversation.lastMessage}</span>
                           </p>
                           {unreadCount > 0 && (
-                            <span className="ml-2 bg-blue-500 text-white text-xs font-bold rounded-full px-2 py-0.5 min-w-[20px] text-center flex-shrink-0">
+                            <span className="bg-blue-500 text-white text-xs font-bold rounded-full px-2 py-0.5 min-w-[20px] text-center flex-shrink-0">
                               {unreadCount > 99 ? '99+' : unreadCount}
                             </span>
                           )}

@@ -130,7 +130,7 @@ export default function QuestionForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 p-6 transition-colors">
+    <form onSubmit={handleSubmit} className="w-full bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 p-6 transition-colors">
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           標題
