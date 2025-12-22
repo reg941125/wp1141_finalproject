@@ -3,6 +3,7 @@
 import { SessionProvider } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import Navbar from '@/components/Navbar';
+import PostHogPageView from '@/components/PostHogPageView';
 
 function MainContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -34,6 +35,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   
   return (
     <>
+      <PostHogPageView />
       {!isChatPage && <Navbar />}
       <MainContent>{children}</MainContent>
     </>

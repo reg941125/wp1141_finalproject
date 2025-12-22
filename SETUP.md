@@ -121,6 +121,26 @@ npm run dev
 - 確認 SMTP 端口正確（587 用於 TLS，465 用於 SSL）
 - 檢查防火牆是否阻擋 SMTP 連接
 
+### PostHog Analytics (選填)
+
+PostHog 是一個開源的產品分析平台，用於追蹤用戶行為和分析產品使用情況。
+
+1. 前往 [PostHog](https://posthog.com/)
+2. 註冊/登入帳號（有免費方案）
+3. 建立新專案
+4. 在專案設定中複製 Project API Key
+5. 填入環境變數：
+   ```
+   NEXT_PUBLIC_POSTHOG_KEY=your_posthog_project_api_key
+   NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+   NEXT_PUBLIC_POSTHOG_SESSION_RECORDING=false  # 設為 true 啟用 session recording
+   ```
+
+**注意**：
+- PostHog 是選填功能，如果不設定環境變數，應用程式仍可正常運作
+- `NEXT_PUBLIC_POSTHOG_HOST` 預設為 `https://us.i.posthog.com`，如果使用其他地區的 PostHog 實例，請修改此值
+- Session recording 會記錄用戶的瀏覽行為，請確保符合隱私政策要求
+
 
 
 

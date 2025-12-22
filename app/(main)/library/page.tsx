@@ -7,6 +7,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import MarkdownEditor from '@/components/MarkdownEditor';
+import { getDownloadUrl } from '@/lib/cloudinary-utils';
 
 interface QuestionFile {
   _id: string;
@@ -107,7 +108,15 @@ export default function LibraryPage() {
 
   const handleDownload = (file: QuestionFile) => {
     if (file.fileUrl) {
-      window.open(file.fileUrl, '_blank');
+      // 使用 Cloudinary 的下載 URL（添加 fl_attachment 參數）
+      const downloadUrl = getDownloadUrl(file.fileUrl);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = file.name;
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     } else {
       // 如果沒有檔案 URL，可以下載內容為文字檔
       const blob = new Blob([file.content || ''], { type: 'text/plain' });

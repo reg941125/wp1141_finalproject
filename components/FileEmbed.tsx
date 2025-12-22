@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { FileText, Download, ExternalLink } from 'lucide-react';
+import { getDownloadUrl, getPreviewUrl } from '@/lib/cloudinary-utils';
 
 interface FileEmbedProps {
   url: string;
@@ -43,16 +44,20 @@ export default function FileEmbed({ url, fileName }: FileEmbedProps) {
   // 對於 Word、Excel、PPT，使用 Google Docs Viewer 或 Office Online Viewer
   const getViewerUrl = () => {
     if (fileType === 'pdf') {
-      return url;
+      // 使用預覽 URL（移除簽名參數）
+      return getPreviewUrl(url);
     }
     // 使用 Google Docs Viewer 來顯示 Office 文件
     if (['doc', 'excel', 'ppt'].includes(fileType)) {
-      return `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+      const previewUrl = getPreviewUrl(url);
+      return `https://docs.google.com/viewer?url=${encodeURIComponent(previewUrl)}&embedded=true`;
     }
     return null;
   };
 
   const viewerUrl = getViewerUrl();
+  const previewUrl = getPreviewUrl(url);
+  const downloadUrl = getDownloadUrl(url);
 
   const handleLoad = () => {
     setLoading(false);
@@ -82,7 +87,7 @@ export default function FileEmbed({ url, fileName }: FileEmbedProps) {
         </div>
         <div className="flex items-center gap-2">
           <a
-            href={url}
+            href={previewUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
@@ -91,7 +96,7 @@ export default function FileEmbed({ url, fileName }: FileEmbedProps) {
             <ExternalLink className="w-4 h-4 text-gray-600 dark:text-gray-300" />
           </a>
           <a
-            href={url}
+            href={downloadUrl}
             download={fileName}
             className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
             title="下載檔案"
@@ -120,7 +125,7 @@ export default function FileEmbed({ url, fileName }: FileEmbedProps) {
                   無法預覽此檔案
                 </p>
                 <a
-                  href={url}
+                  href={previewUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
@@ -150,7 +155,7 @@ export default function FileEmbed({ url, fileName }: FileEmbedProps) {
             </p>
             <div className="flex gap-3 justify-center">
               <a
-                href={url}
+                href={previewUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
@@ -159,7 +164,7 @@ export default function FileEmbed({ url, fileName }: FileEmbedProps) {
                 在新分頁開啟
               </a>
               <a
-                href={url}
+                href={downloadUrl}
                 download={fileName}
                 className="flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm"
               >

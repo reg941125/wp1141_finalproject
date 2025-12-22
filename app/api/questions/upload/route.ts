@@ -30,6 +30,8 @@ export async function POST(request: Request) {
           {
             resource_type: 'auto',
             folder: 'tutoring-platform',
+            access_mode: 'public', // 確保檔案是公開的
+            type: 'upload', // 明確指定為 upload 類型
           },
           (error, result) => {
             if (error) reject(error);

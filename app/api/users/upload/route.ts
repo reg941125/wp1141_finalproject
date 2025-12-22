@@ -30,6 +30,8 @@ export async function POST(request: Request) {
         {
           resource_type: 'auto',
           folder: `tutoring-platform/${type}`,
+          access_mode: 'public', // 確保檔案是公開的
+          type: 'upload', // 明確指定為 upload 類型
           transformation: type === 'avatar' 
             ? [{ width: 400, height: 400, crop: 'fill', gravity: 'face' }]
             : [{ width: 1500, height: 500, crop: 'fill' }],
