@@ -36,20 +36,31 @@ export default function LibraryPage() {
   const router = useRouter();
   const [files, setFiles] = useState<QuestionFile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [myLibrary, setMyLibrary] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState<string>('');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('');
   const [selectedTag, setSelectedTag] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [showCreateNoteDialog, setShowCreateNoteDialog] = useState(false);
   const [allTags, setAllTags] = useState<string[]>([]);
 
   const fetchFiles = useCallback(async () => {
     try {
       setLoading(true);
+      // 始終獲取所有檔案來收集所有標籤
+      const allResponse = await fetch('/api/questions');
+      if (allResponse.ok) {
+        const allData = await allResponse.json();
+        
+        // 收集所有標籤
+        const tags = new Set<string>();
+        allData.forEach((file: QuestionFile) => {
+          file.tags?.forEach((tag: string) => tags.add(tag));
+        });
+        setAllTags(Array.from(tags).sort());
+      }
+
+      // 獲取篩選後的檔案
       const params = new URLSearchParams();
-      if (myLibrary) params.append('myLibrary', 'true');
       if (selectedSubject) params.append('subject', selectedSubject);
       if (selectedDifficulty) params.append('difficulty', selectedDifficulty);
       if (selectedTag) params.append('tag', selectedTag);
@@ -59,27 +70,20 @@ export default function LibraryPage() {
       if (response.ok) {
         const data = await response.json();
         setFiles(data);
-        
-        // 收集所有標籤
-        const tags = new Set<string>();
-        data.forEach((file: QuestionFile) => {
-          file.tags?.forEach((tag: string) => tags.add(tag));
-        });
-        setAllTags(Array.from(tags).sort());
       }
     } catch (error) {
       console.error('Error fetching files:', error);
     } finally {
       setLoading(false);
     }
-  }, [myLibrary, selectedSubject, selectedDifficulty, selectedTag, searchQuery]);
+  }, [selectedSubject, selectedDifficulty, selectedTag, searchQuery]);
 
   // 當認證狀態或篩選條件改變時重新載入
   useEffect(() => {
     if (status === 'authenticated') {
       fetchFiles();
     }
-  }, [status, fetchFiles, myLibrary, selectedSubject, selectedDifficulty, selectedTag, searchQuery]);
+  }, [status, fetchFiles, selectedSubject, selectedDifficulty, selectedTag, searchQuery]);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -88,22 +92,6 @@ export default function LibraryPage() {
       return;
     }
   }, [status, router]);
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('確定要刪除此題目/筆記嗎？')) return;
-
-    try {
-      const response = await fetch(`/api/questions/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        fetchFiles();
-      }
-    } catch (error) {
-      console.error('Error deleting file:', error);
-    }
-  };
 
   const handleDownload = (file: QuestionFile) => {
     if (file.fileUrl) {
@@ -138,30 +126,12 @@ export default function LibraryPage() {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             題目與筆記專區
           </h1>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setMyLibrary(!myLibrary)}
-              className={`px-4 py-2 rounded-md transition-colors ${
-                myLibrary
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white'
-              }`}
-            >
-              {myLibrary ? '我的筆記庫' : '所有資源'}
-            </button>
-            <button
-              onClick={() => setShowCreateNoteDialog(true)}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-            >
-              新增筆記
-            </button>
-            <button
-              onClick={() => setShowUploadDialog(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-            >
-              上傳題目/筆記
-            </button>
-          </div>
+          <button
+            onClick={() => setShowUploadDialog(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            上傳題目/筆記
+          </button>
         </div>
 
         {/* 搜尋和篩選 */}
@@ -176,59 +146,94 @@ export default function LibraryPage() {
             />
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <select
-              value={selectedSubject}
-              onChange={(e) => setSelectedSubject(e.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">所有科目</option>
-              {SUBJECTS.map((subject) => (
-                <option key={subject} value={subject}>
-                  {subject}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={selectedDifficulty}
-              onChange={(e) => setSelectedDifficulty(e.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">所有難度</option>
-              {DIFFICULTIES.map((difficulty) => (
-                <option key={difficulty} value={difficulty}>
-                  {difficulty}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={selectedTag}
-              onChange={(e) => setSelectedTag(e.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">所有標籤</option>
-              {allTags.map((tag) => (
-                <option key={tag} value={tag}>
-                  {tag}
-                </option>
-              ))}
-            </select>
-
-            {(selectedSubject || selectedDifficulty || selectedTag || searchQuery) && (
+          {/* 科目篩選 */}
+          <div>
+            <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">科目篩選</div>
+            <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => {
-                  setSelectedSubject('');
-                  setSelectedDifficulty('');
-                  setSelectedTag('');
-                  setSearchQuery('');
-                }}
-                className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                onClick={() => setSelectedSubject('')}
+                className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                  selectedSubject === ''
+                    ? 'bg-blue-600 dark:bg-blue-700 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                }`}
               >
-                清除篩選
+                全部
               </button>
-            )}
+              {SUBJECTS.map((subject) => (
+                <button
+                  key={subject}
+                  onClick={() => setSelectedSubject(subject)}
+                  className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                    selectedSubject === subject
+                      ? 'bg-blue-600 dark:bg-blue-700 text-white'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  {subject}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 難度篩選 */}
+          <div>
+            <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">難度篩選</div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedDifficulty('')}
+                className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                  selectedDifficulty === ''
+                    ? 'bg-green-600 dark:bg-green-700 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                }`}
+              >
+                全部
+              </button>
+              {DIFFICULTIES.map((difficulty) => (
+                <button
+                  key={difficulty}
+                  onClick={() => setSelectedDifficulty(difficulty)}
+                  className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                    selectedDifficulty === difficulty
+                      ? 'bg-green-600 dark:bg-green-700 text-white'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  {difficulty}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 標籤篩選 */}
+          <div>
+            <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">標籤篩選</div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedTag('')}
+                className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                  selectedTag === ''
+                    ? 'bg-purple-600 dark:bg-purple-700 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                }`}
+              >
+                全部
+              </button>
+              {allTags.map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => setSelectedTag(tag)}
+                  className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                    selectedTag === tag
+                      ? 'bg-purple-600 dark:bg-purple-700 text-white'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -239,7 +244,7 @@ export default function LibraryPage() {
       ) : files.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-600 dark:text-gray-400">
-            {myLibrary ? '您還沒有上傳任何題目或筆記' : '目前沒有可用的題目或筆記'}
+            目前沒有可用的題目或筆記
           </p>
         </div>
       ) : (
@@ -250,7 +255,11 @@ export default function LibraryPage() {
               className="bg-white dark:bg-gray-800 rounded-lg shadow-md dark:shadow-gray-900/50 p-6 hover:shadow-lg transition-shadow"
             >
               <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-2">
+                <Link
+                  href={`/profile/${file.authorId._id}`}
+                  className="flex items-center gap-2 hover:opacity-75 transition-opacity"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   {(file.authorId.customImage || file.authorId.image) && (
                     <Image
                       src={file.authorId.customImage || file.authorId.image}
@@ -260,26 +269,10 @@ export default function LibraryPage() {
                       className="rounded-full"
                     />
                   )}
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                  <span className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
                     {file.authorId.name}
                   </span>
-                </div>
-                {myLibrary && (
-                  <div className="flex gap-2">
-                    <Link
-                      href={`/library/edit/${file._id}`}
-                      className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm"
-                    >
-                      編輯
-                    </Link>
-                    <button
-                      onClick={() => handleDelete(file._id)}
-                      className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm"
-                    >
-                      刪除
-                    </button>
-                  </div>
-                )}
+                </Link>
               </div>
 
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
@@ -326,16 +319,6 @@ export default function LibraryPage() {
         </div>
       )}
 
-      {/* 新增筆記對話框 */}
-      {showCreateNoteDialog && (
-        <CreateNoteDialog
-          onClose={() => {
-            setShowCreateNoteDialog(false);
-            fetchFiles();
-          }}
-        />
-      )}
-
       {/* 上傳對話框 */}
       {showUploadDialog && (
         <UploadDialog
@@ -345,211 +328,6 @@ export default function LibraryPage() {
           }}
         />
       )}
-    </div>
-  );
-}
-
-// 新增筆記對話框組件
-function CreateNoteDialog({ onClose }: { onClose: () => void }) {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [subject, setSubject] = useState('其他');
-  const [difficulty, setDifficulty] = useState('中等');
-  const [tags, setTags] = useState('');
-  const [content, setContent] = useState('');
-  const [isPublic, setIsPublic] = useState(true);
-  const [showOnProfile, setShowOnProfile] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name || !description) {
-      alert('請填寫名稱和描述');
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      const response = await fetch('/api/questions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          description,
-          fileUrl: '', // 新增筆記不需要檔案
-          content,
-          subject,
-          difficulty,
-          tags: tags.split(',').map((t) => t.trim()).filter((t) => t),
-          isPublic,
-          showOnProfile,
-        }),
-      });
-
-      if (response.ok) {
-        onClose();
-      } else {
-        const data = await response.json();
-        alert(data.error || '創建失敗，請稍後再試');
-      }
-    } catch (error) {
-      console.error('Error creating note:', error);
-      alert('創建失敗，請稍後再試');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              新增筆記
-            </h2>
-            <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl leading-none"
-            >
-              ✕
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                筆記名稱 *
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                placeholder="例如: 微積分第一章重點整理"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                簡短描述 *
-              </label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                required
-                rows={2}
-                placeholder="簡單描述這份筆記的內容..."
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  科目
-                </label>
-                <select
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                >
-                  {SUBJECTS.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  難度
-                </label>
-                <select
-                  value={difficulty}
-                  onChange={(e) => setDifficulty(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                >
-                  {DIFFICULTIES.map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                標籤（用逗號分隔）
-              </label>
-              <input
-                type="text"
-                value={tags}
-                onChange={(e) => setTags(e.target.value)}
-                placeholder="例如: 微積分, 重點整理, 公式"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                筆記內容（支援 Markdown）*
-              </label>
-              <div className="border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden">
-                <MarkdownEditor
-                  value={content}
-                  onChange={setContent}
-                  placeholder="開始撰寫您的筆記...&#10;&#10;支援 Markdown 語法：&#10;- 標題：使用 # ## ###&#10;- 列表：使用 - 或 1.&#10;- 粗體：**文字**&#10;- 斜體：*文字*&#10;- 程式碼：`code` 或 ```code block```&#10;- LaTeX：使用 /in{...} 或 /block{...}"
-                />
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                提示：內容為必填，請至少輸入一些筆記內容
-              </p>
-            </div>
-
-            <div className="flex gap-4">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={isPublic}
-                  onChange={(e) => setIsPublic(e.target.checked)}
-                  className="mr-2"
-                />
-                <span className="text-sm text-gray-700 dark:text-gray-300">公開分享</span>
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={showOnProfile}
-                  onChange={(e) => setShowOnProfile(e.target.checked)}
-                  className="mr-2"
-                />
-                <span className="text-sm text-gray-700 dark:text-gray-300">顯示在個人檔案</span>
-              </label>
-            </div>
-
-            <div className="flex gap-2 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                取消
-              </button>
-              <button
-                type="submit"
-                disabled={submitting || !content.trim()}
-                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {submitting ? '創建中...' : '創建筆記'}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
     </div>
   );
 }
@@ -758,12 +536,13 @@ function UploadDialog({ onClose }: { onClose: () => void }) {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 內容（選填，支援 Markdown）
               </label>
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                rows={6}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
-              />
+              <div className="border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden">
+                <MarkdownEditor
+                  value={content}
+                  onChange={setContent}
+                  placeholder="開始撰寫您的筆記...&#10;&#10;支援 Markdown 語法：&#10;- 標題：使用 # ## ###&#10;- 列表：使用 - 或 1.&#10;- 粗體：**文字**&#10;- 斜體：*文字*&#10;- 程式碼：`code` 或 ```code block```&#10;- LaTeX：使用 /in{...} 或 /block{...}"
+                />
+              </div>
             </div>
 
             <div className="flex gap-4">

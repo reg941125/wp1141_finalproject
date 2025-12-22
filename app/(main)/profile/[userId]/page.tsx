@@ -80,9 +80,12 @@ export default function ProfilePage() {
 
   const fetchProfile = async () => {
     try {
+      const isOwn = session?.user?.id === params.userId || 
+                    session?.user?.id?.toString() === params.userId?.toString();
+      
       const [userRes, filesRes, jobsRes, followersRes, followStatusRes] = await Promise.all([
         fetch(`/api/users/${params.userId}`),
-        fetch(`/api/questions?userId=${params.userId}`),
+        fetch(`/api/questions?userId=${params.userId}${isOwn ? '' : '&publicOnly=true'}`),
         fetch(`/api/jobs?userId=${params.userId}`),
         fetch(`/api/users/${params.userId}/followers`),
         session ? fetch(`/api/users/${params.userId}/follow`) : Promise.resolve(null),
@@ -95,7 +98,8 @@ export default function ProfilePage() {
 
       if (filesRes.ok) {
         const filesData = await filesRes.json();
-        setQuestionFiles(filesData.filter((f: QuestionFile) => f.showOnProfile));
+        // 如果是自己的頁面，顯示所有檔案；如果是別人的頁面，API 已經過濾只返回公開的
+        setQuestionFiles(filesData);
       }
 
       if (jobsRes.ok) {
@@ -358,24 +362,6 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Question Files */}
-      {questionFiles.length > 0 && (
-        <div className="px-4 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">題目與考卷</h2>
-          <div className="space-y-3">
-            {questionFiles.map((file) => (
-              <Link
-                key={file._id}
-                href={`/library/edit/${file._id}`}
-                className="block p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              >
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{file.name}</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">{file.description}</p>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Job Postings */}
       {jobPostings.length > 0 && (
@@ -424,6 +410,68 @@ export default function ProfilePage() {
       {questionFiles.length === 0 && jobPostings.length === 0 && !user.teachingExperience && (
         <div className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
           <p>尚無內容</p>
+        </div>
+      )}
+
+      {/* 我的筆記庫 */}
+      {questionFiles.length > 0 && (
+        <div className="px-4 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+            {isOwnProfile ? '我的筆記庫' : '筆記庫'}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {questionFiles.map((file) => (
+              <div
+                key={file._id}
+                className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
+              >
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  {file.name}
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-2">
+                  {file.description}
+                </p>
+                <div className="flex items-center justify-between gap-2 text-xs">
+                  <div className="flex gap-2">
+                    <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded">
+                      {file.subject}
+                    </span>
+                    <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded">
+                      {file.difficulty}
+                    </span>
+                  </div>
+                  {isOwnProfile && (
+                    <div className="flex gap-2">
+                      <Link
+                        href={`/library/edit/${file._id}`}
+                        className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                      >
+                        編輯
+                      </Link>
+                      <button
+                        onClick={async () => {
+                          if (!confirm('確定要刪除此筆記嗎？')) return;
+                          try {
+                            const response = await fetch(`/api/questions/${file._id}`, {
+                              method: 'DELETE',
+                            });
+                            if (response.ok) {
+                              fetchProfile();
+                            }
+                          } catch (error) {
+                            console.error('Error deleting file:', error);
+                          }
+                        }}
+                        className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                      >
+                        刪除
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

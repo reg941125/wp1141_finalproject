@@ -114,10 +114,14 @@ export default function Navbar() {
     }
   };
 
-  // 當打開通知面板時獲取通知
+  // 當打開通知面板時獲取通知並標記為已讀
   useEffect(() => {
     if (isNotificationOpen && session) {
       fetchNotifications();
+      // 自動標記所有通知為已讀
+      if (notificationCount > 0) {
+        markAllAsRead();
+      }
     }
   }, [isNotificationOpen, session]);
 

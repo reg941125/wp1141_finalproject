@@ -14,16 +14,18 @@ export async function GET(request: Request) {
     const difficulty = searchParams.get('difficulty');
     const tag = searchParams.get('tag');
     const search = searchParams.get('search');
-    const myLibrary = searchParams.get('myLibrary') === 'true';
+    const publicOnly = searchParams.get('publicOnly') === 'true';
     const session = await auth();
 
     const query: any = {};
 
-    // 如果查詢個人筆記庫，只顯示當前用戶的
-    if (myLibrary && session?.user?.id) {
-      query.authorId = session.user.id;
-    } else if (userId) {
+    // 如果指定了 userId
+    if (userId) {
       query.authorId = userId;
+      // 如果要求只顯示公開的
+      if (publicOnly) {
+        query.isPublic = true;
+      }
     } else {
       // 如果沒有指定用戶，只顯示公開的
       query.isPublic = true;
