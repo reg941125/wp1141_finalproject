@@ -6,6 +6,7 @@ interface JobPostingDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: JobPostingData) => void;
+  defaultType?: 'seeking_tutor' | 'seeking_student';
 }
 
 export interface JobPostingData {
@@ -24,9 +25,10 @@ export default function JobPostingDialog({
   isOpen,
   onClose,
   onSubmit,
+  defaultType = 'seeking_tutor',
 }: JobPostingDialogProps) {
   const [formData, setFormData] = useState<JobPostingData>({
-    type: 'seeking_tutor',
+    type: defaultType,
     title: '',
     tags: [],
     targetEducationLevels: [],

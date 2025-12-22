@@ -34,9 +34,11 @@ export default function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isGuestMenuOpen, setIsGuestMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [isTutoringMenuOpen, setIsTutoringMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const guestMenuRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
+  const tutoringMenuRef = useRef<HTMLDivElement>(null);
 
   const handleSignOut = async () => {
     // 立即清除未讀數量，避免顯示舊數據
@@ -140,16 +142,23 @@ export default function Navbar() {
           setIsNotificationOpen(false);
         }
       }
+
+      if (tutoringMenuRef.current && !tutoringMenuRef.current.contains(event.target as Node)) {
+        // 檢查是否點擊了家教專區按鈕
+        if (!target.closest('[data-tutoring-button]')) {
+          setIsTutoringMenuOpen(false);
+        }
+      }
     };
 
-    if (isDropdownOpen || isGuestMenuOpen || isNotificationOpen) {
+    if (isDropdownOpen || isGuestMenuOpen || isNotificationOpen || isTutoringMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isDropdownOpen, isGuestMenuOpen, isNotificationOpen]);
+  }, [isDropdownOpen, isGuestMenuOpen, isNotificationOpen, isTutoringMenuOpen]);
 
   // 標記通知為已讀
   const markAsRead = async (notificationId: string) => {
@@ -202,16 +211,39 @@ export default function Navbar() {
               >
                 題目討論
               </Link>
-              <Link
-                href="/tutoring"
-                className={`${
-                  isActive('/tutoring')
-                    ? 'border-blue-500 text-gray-900 dark:text-gray-100'
-                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-200'
-                } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors`}
-              >
-                家教專區
-              </Link>
+              <div className="relative inline-flex" ref={tutoringMenuRef}>
+                <button
+                  data-tutoring-button
+                  onClick={() => setIsTutoringMenuOpen(!isTutoringMenuOpen)}
+                  className={`${
+                    isActive('/tutoring')
+                      ? 'border-blue-500 text-gray-900 dark:text-gray-100'
+                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-200'
+                  } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors`}
+                >
+                  家教專區
+                </button>
+                {isTutoringMenuOpen && (
+                  <div className="absolute left-0 top-full mt-1 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-50">
+                    <div className="py-1">
+                      <Link
+                        href="/tutoring/seeking-students"
+                        onClick={() => setIsTutoringMenuOpen(false)}
+                        className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      >
+                        徵學生
+                      </Link>
+                      <Link
+                        href="/tutoring/seeking-tutors"
+                        onClick={() => setIsTutoringMenuOpen(false)}
+                        className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      >
+                        徵家教
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </div>
               <Link
                 href="/library"
                 className={`${
@@ -447,17 +479,33 @@ export default function Navbar() {
                         >
                           題目討論
                         </Link>
-                        <Link
-                          href="/tutoring"
-                          onClick={() => setIsDropdownOpen(false)}
-                          className={`${
-                            isActive('/tutoring')
-                              ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                              : 'text-gray-700 dark:text-gray-300'
-                          } block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
-                        >
-                          家教專區
-                        </Link>
+                        <div>
+                          <div className="px-4 py-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                            家教專區
+                          </div>
+                          <Link
+                            href="/tutoring/seeking-students"
+                            onClick={() => setIsDropdownOpen(false)}
+                            className={`${
+                              pathname === '/tutoring/seeking-students'
+                                ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                                : 'text-gray-700 dark:text-gray-300'
+                            } block pl-8 pr-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
+                          >
+                            徵學生
+                          </Link>
+                          <Link
+                            href="/tutoring/seeking-tutors"
+                            onClick={() => setIsDropdownOpen(false)}
+                            className={`${
+                              pathname === '/tutoring/seeking-tutors'
+                                ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                                : 'text-gray-700 dark:text-gray-300'
+                            } block pl-8 pr-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
+                          >
+                            徵家教
+                          </Link>
+                        </div>
                         <Link
                           href="/library"
                           onClick={() => setIsDropdownOpen(false)}
@@ -568,17 +616,33 @@ export default function Navbar() {
                       >
                         題目討論
                       </Link>
-                      <Link
-                        href="/tutoring"
-                        onClick={() => setIsGuestMenuOpen(false)}
-                        className={`${
-                          isActive('/tutoring')
-                            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                            : 'text-gray-700 dark:text-gray-300'
-                        } block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
-                      >
-                        家教專區
-                      </Link>
+                      <div>
+                        <div className="px-4 py-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                          家教專區
+                        </div>
+                        <Link
+                          href="/tutoring/seeking-students"
+                          onClick={() => setIsGuestMenuOpen(false)}
+                          className={`${
+                            pathname === '/tutoring/seeking-students'
+                              ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                              : 'text-gray-700 dark:text-gray-300'
+                          } block pl-8 pr-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
+                        >
+                          徵學生
+                        </Link>
+                        <Link
+                          href="/tutoring/seeking-tutors"
+                          onClick={() => setIsGuestMenuOpen(false)}
+                          className={`${
+                            pathname === '/tutoring/seeking-tutors'
+                              ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                              : 'text-gray-700 dark:text-gray-300'
+                          } block pl-8 pr-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
+                        >
+                          徵家教
+                        </Link>
+                      </div>
                       <Link
                         href="/library"
                         onClick={() => setIsGuestMenuOpen(false)}
