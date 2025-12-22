@@ -21,6 +21,7 @@ interface Notification {
     _id: string;
     name: string;
     image?: string;
+    customImage?: string;
   };
 }
 
@@ -274,8 +275,6 @@ export default function Navbar() {
           <div className="flex items-center">
             {session ? (
               <div className="flex items-center space-x-4">
-                <ThemeToggle />
-                
                 {/* 通知鈴鐺 */}
                 <div className="relative" ref={notificationRef}>
                   <button
@@ -307,7 +306,7 @@ export default function Navbar() {
 
                   {/* 通知下拉面板 */}
                   {isNotificationOpen && (
-                    <div className="absolute right-0 mt-2 w-96 max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-800 rounded-lg shadow-xl dark:shadow-gray-900/50 z-50 border border-gray-200 dark:border-gray-700 max-h-[80vh] overflow-hidden flex flex-col">
+                    <div className="fixed sm:absolute left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-0 top-16 sm:top-auto mt-0 sm:mt-2 w-[calc(100vw-2rem)] sm:w-96 bg-white dark:bg-gray-800 rounded-lg shadow-xl dark:shadow-gray-900/50 z-50 border border-gray-200 dark:border-gray-700 max-h-[80vh] overflow-hidden flex flex-col">
                       {/* 標題欄 */}
                       <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -365,22 +364,24 @@ export default function Navbar() {
                                     }}
                                     className="hover:opacity-80 transition-opacity flex-shrink-0"
                                   >
-                                    {(notification.triggeredBy.customImage || notification.triggeredBy.image) ? (
-                                      <Image
-                                        src={notification.triggeredBy.customImage || notification.triggeredBy.image}
-                                        alt={notification.triggeredBy.name}
-                                        width={40}
-                                        height={40}
-                                        className="rounded-full"
-                                        unoptimized
-                                      />
-                                    ) : (
-                                      <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                                        <span className="text-gray-700 dark:text-gray-300 text-sm font-bold">
-                                          {notification.triggeredBy.name.charAt(0).toUpperCase()}
-                                        </span>
-                                      </div>
-                                    )}
+                                    <div className="relative w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center overflow-hidden">
+                                      {(notification.triggeredBy.customImage || notification.triggeredBy.image) && (
+                                        <Image
+                                          src={notification.triggeredBy.customImage || notification.triggeredBy.image || ''}
+                                          alt={notification.triggeredBy.name}
+                                          width={40}
+                                          height={40}
+                                          className="rounded-full object-cover"
+                                          unoptimized
+                                          onError={(e) => {
+                                            e.currentTarget.style.display = 'none';
+                                          }}
+                                        />
+                                      )}
+                                      <span className="text-gray-700 dark:text-gray-300 text-sm font-bold absolute">
+                                        {notification.triggeredBy.name.charAt(0).toUpperCase()}
+                                      </span>
+                                    </div>
                                   </Link>
 
                                   <div className="flex-1 min-w-0">
@@ -430,8 +431,8 @@ export default function Navbar() {
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     className="flex items-center space-x-2 focus:outline-none"
                   >
-                    {session.user?.image ? (
-                      <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-300 dark:bg-gray-600 ring-2 ring-gray-200 dark:ring-gray-700 hover:ring-blue-500 dark:hover:ring-blue-400 transition-all">
+                    <div className="relative w-10 h-10 rounded-full bg-blue-600 dark:bg-blue-700 flex items-center justify-center ring-2 ring-gray-200 dark:ring-gray-700 hover:ring-blue-500 dark:hover:ring-blue-400 transition-all overflow-hidden">
+                      {session.user?.image && (
                         <Image
                           src={session.user.image}
                           alt={session.user.name || 'User'}
@@ -443,19 +444,16 @@ export default function Navbar() {
                             e.currentTarget.style.display = 'none';
                           }}
                         />
-                      </div>
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-blue-600 dark:bg-blue-700 flex items-center justify-center ring-2 ring-gray-200 dark:ring-gray-700 hover:ring-blue-500 dark:hover:ring-blue-400 transition-all">
-                        <span className="text-white text-sm font-bold">
-                          {session.user?.name?.charAt(0).toUpperCase() || 'U'}
-                        </span>
-                      </div>
-                    )}
+                      )}
+                      <span className="text-white text-sm font-bold absolute">
+                        {session.user?.name?.charAt(0).toUpperCase() || 'U'}
+                      </span>
+                    </div>
                   </button>
 
                   {/* 下拉菜單 */}
                   {isDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900/50 py-2 z-50 border border-gray-200 dark:border-gray-700">
+                    <div className="absolute right-0 mt-2 w-64 sm:w-72 bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900/50 py-2 z-50 border border-gray-200 dark:border-gray-700">
                       {/* 用戶資訊 */}
                       <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
                         <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
@@ -554,15 +552,23 @@ export default function Navbar() {
                       >
                         登出
                       </button>
+                      
+                      {/* 分隔線 */}
+                      <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
+                      
+                      {/* 主題切換 */}
+                      <div className="px-4 py-2">
+                        <ThemeToggle />
+                      </div>
                     </div>
                   )}
                 </div>
               </div>
             ) : (
               <div className="flex items-center space-x-4">
-                <ThemeToggle />
-                {/* 桌面版登入/註冊按鈕 */}
+                {/* 桌面版主題切換和登入/註冊按鈕 */}
                 <div className="hidden sm:flex items-center space-x-4">
+                  <ThemeToggle />
                   <Link
                     href="/login"
                     className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 text-sm font-medium transition-colors"
@@ -603,7 +609,7 @@ export default function Navbar() {
 
                   {/* 訪客下拉菜單 */}
                   {isGuestMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900/50 py-2 z-50 border border-gray-200 dark:border-gray-700">
+                    <div className="absolute right-0 mt-2 w-64 sm:w-72 bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900/50 py-2 z-50 border border-gray-200 dark:border-gray-700">
                       {/* 導航連結 */}
                       <Link
                         href="/"
@@ -684,6 +690,14 @@ export default function Navbar() {
                       >
                         註冊
                       </Link>
+                      
+                      {/* 分隔線 */}
+                      <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
+                      
+                      {/* 主題切換 */}
+                      <div className="px-4 py-2">
+                        <ThemeToggle />
+                      </div>
                     </div>
                   )}
                 </div>

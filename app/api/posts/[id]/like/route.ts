@@ -65,7 +65,7 @@ export async function POST(
               triggeredBy: session.user.id,
               type: 'like',
               postId: post._id,
-              content: '有人按讚了你的貼文',
+              content: '按讚了你的貼文',
             });
           }
         } catch (notifError) {

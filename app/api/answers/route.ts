@@ -91,7 +91,7 @@ export async function POST(request: Request) {
           triggeredBy: session.user.id,
           type: 'reply',
           postId: post._id,
-          content: '有人回答了你的問題',
+          content: '回答了你的問題',
         });
       }
     } catch (notifError) {

@@ -44,6 +44,14 @@ export default function JobPostingDetailPage() {
   const [isLiked, setIsLiked] = useState(false);
   const [liking, setLiking] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showLikesModal, setShowLikesModal] = useState(false);
+  const [likeUsers, setLikeUsers] = useState<Array<{
+    _id: string;
+    name: string;
+    image?: string;
+    customImage?: string;
+    username?: string;
+  }>>([]);
 
   const userId = session?.user?.id;
   const userIdRef = useRef(userId);
@@ -166,6 +174,20 @@ export default function JobPostingDetailPage() {
     }
   };
 
+  // 獲取點讚用戶列表
+  const handleShowLikes = async () => {
+    try {
+      const response = await fetch(`/api/jobs/${params.id}/likes`);
+      if (response.ok) {
+        const data = await response.json();
+        setLikeUsers(data.users || []);
+        setShowLikesModal(true);
+      }
+    } catch (error) {
+      console.error('Error fetching likes:', error);
+    }
+  };
+
   const handleDelete = async () => {
     if (!confirm('確定要刪除這則徵人訊息嗎？')) return;
 
@@ -267,18 +289,28 @@ export default function JobPostingDetailPage() {
             </Link>
             <span>發布時間: {new Date(posting.createdAt).toLocaleDateString('zh-TW')}</span>
           </div>
-          <button
-            onClick={handleLike}
-            disabled={liking}
-            className="flex items-center space-x-1 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors disabled:opacity-50"
-          >
-            <Heart
-              className={`w-6 h-6 ${
-                isLiked ? 'fill-red-500 text-red-500 dark:fill-red-400 dark:text-red-400' : ''
-              }`}
-            />
-            <span>{posting.likes || 0}</span>
-          </button>
+          <div>
+            <button
+              onClick={handleLike}
+              disabled={liking}
+              className="flex items-center space-x-1 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors disabled:opacity-50"
+            >
+              <Heart
+                className={`w-6 h-6 ${
+                  isLiked ? 'fill-red-500 text-red-500 dark:fill-red-400 dark:text-red-400' : ''
+                }`}
+              />
+              <span>{posting.likes || 0}</span>
+            </button>
+            {posting.likes > 0 && (
+              <button
+                onClick={handleShowLikes}
+                className="text-xs text-gray-500 dark:text-gray-400 hover:underline mt-2"
+              >
+                查看點讚
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="flex space-x-2 mb-4">
@@ -313,6 +345,83 @@ export default function JobPostingDetailPage() {
           <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{posting.requirements}</p>
         </div>
       </div>
+
+      {/* 點讚用戶對話框 */}
+      {showLikesModal && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowLikesModal(false)}
+        >
+          <div 
+            className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full max-h-[80vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 標題 */}
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                點讚的人
+              </h2>
+              <button
+                onClick={() => setShowLikesModal(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* 用戶列表 */}
+            <div className="overflow-y-auto flex-1">
+              {likeUsers.length === 0 ? (
+                <div className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                  還沒有人點讚
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {likeUsers.map((user) => (
+                    <Link
+                      key={user._id}
+                      href={`/profile/${user._id}`}
+                      onClick={() => setShowLikesModal(false)}
+                      className="flex items-center gap-3 px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <div className="relative w-12 h-12 rounded-full bg-blue-600 dark:bg-blue-700 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {(user.customImage || user.image) && (
+                          <Image
+                            src={user.customImage || user.image || ''}
+                            alt={user.name}
+                            width={48}
+                            height={48}
+                            className="rounded-full object-cover"
+                            unoptimized
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        )}
+                        <span className="text-white text-sm font-bold absolute">
+                          {user.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                          {user.name}
+                        </p>
+                        {user.username && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            @{user.username}
+                          </p>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

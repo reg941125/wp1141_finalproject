@@ -50,7 +50,7 @@ export async function POST(
       userId: params.id, // 被追蹤的人收到通知
       type: 'follow',
       triggeredBy: session.user.id, // 追蹤者
-      content: `${followerName} 開始追蹤你`,
+      content: '開始追蹤你',
       read: false,
     });
 

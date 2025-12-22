@@ -273,10 +273,10 @@ export default function ChatPage() {
                       onClick={(e) => e.stopPropagation()}
                       className="flex-shrink-0 hover:opacity-80 transition-opacity"
                     >
-                      {(otherUser.customImage || otherUser.image) ? (
-                        <div className="relative w-12 h-12 rounded-full overflow-hidden bg-gray-300 dark:bg-gray-600">
+                      <div className="relative w-12 h-12 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center overflow-hidden">
+                        {(otherUser.customImage || otherUser.image) && (
                           <Image
-                            src={otherUser.customImage || otherUser.image}
+                            src={otherUser.customImage || otherUser.image || ''}
                             alt={otherUser.name}
                             width={48}
                             height={48}
@@ -285,14 +285,11 @@ export default function ChatPage() {
                               e.currentTarget.style.display = 'none';
                             }}
                           />
-                        </div>
-                      ) : (
-                        <div className="w-12 h-12 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                          <span className="text-gray-600 dark:text-gray-300 text-lg font-medium">
-                            {otherUser.name.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                      )}
+                        )}
+                        <span className="text-gray-600 dark:text-gray-300 text-lg font-medium absolute">
+                          {otherUser.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
                     </Link>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
@@ -359,10 +356,10 @@ export default function ChatPage() {
                 href={`/profile/${otherUser._id}`}
                 className="flex-shrink-0 hover:opacity-80 transition-opacity"
               >
-                {(otherUser.customImage || otherUser.image) ? (
-                  <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-300 dark:bg-gray-600">
+                <div className="relative w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center overflow-hidden">
+                  {(otherUser.customImage || otherUser.image) && (
                     <Image
-                      src={otherUser.customImage || otherUser.image}
+                      src={otherUser.customImage || otherUser.image || ''}
                       alt={otherUser.name}
                       width={40}
                       height={40}
@@ -371,14 +368,11 @@ export default function ChatPage() {
                         e.currentTarget.style.display = 'none';
                       }}
                     />
-                  </div>
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                    <span className="text-gray-600 dark:text-gray-300 text-sm font-medium">
-                      {otherUser.name.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                )}
+                  )}
+                  <span className="text-gray-600 dark:text-gray-300 text-sm font-medium absolute">
+                    {otherUser.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
               </Link>
               <Link
                 href={`/profile/${otherUser._id}`}

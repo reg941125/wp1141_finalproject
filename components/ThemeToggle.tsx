@@ -21,15 +21,17 @@ export default function ThemeToggle() {
   }
 
   return (
-    <button
-      onClick={toggleTheme}
-      className="relative inline-flex items-center w-14 h-7 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
-      style={{
-        backgroundColor: theme === 'dark' ? '#1e293b' : '#dbeafe',
-      }}
-      aria-label="切換主題"
-      title={`切換到${theme === 'light' ? '深色' : '淺色'}模式`}
-    >
+    <div className="flex items-center gap-2">
+      <span className="text-sm text-gray-700 dark:text-gray-300">深淺模式</span>
+      <button
+        onClick={toggleTheme}
+        className="relative inline-flex items-center w-14 h-7 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 border-2 border-gray-300 dark:border-gray-600"
+        style={{
+          backgroundColor: theme === 'dark' ? '#1e293b' : '#dbeafe',
+        }}
+        aria-label="切換主題"
+        title={`切換到${theme === 'light' ? '深色' : '淺色'}模式`}
+      >
       {/* 背景圖標 - 月亮在左邊 */}
       <span className="absolute left-1.5 top-1/2 -translate-y-1/2">
         <svg
@@ -62,7 +64,8 @@ export default function ThemeToggle() {
           theme === 'dark' ? 'translate-x-1' : 'translate-x-7'
         }`}
       />
-    </button>
+      </button>
+    </div>
   );
 }
 

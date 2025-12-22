@@ -63,6 +63,14 @@ export default function ProfilePage() {
   const [followersCount, setFollowersCount] = useState(0);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
+  const [showFollowModal, setShowFollowModal] = useState<'followers' | 'following' | null>(null);
+  const [followUsers, setFollowUsers] = useState<Array<{
+    _id: string;
+    name: string;
+    image?: string;
+    customImage?: string;
+    username?: string;
+  }>>([]);
 
   useEffect(() => {
     if (params.userId) {
@@ -176,6 +184,20 @@ export default function ProfilePage() {
     } catch (error) {
       console.error('Error creating conversation:', error);
       alert('無法開啟對話，請稍後再試');
+    }
+  };
+
+  // 獲取追蹤者或追蹤中列表
+  const handleShowFollowList = async (type: 'followers' | 'following') => {
+    try {
+      const response = await fetch(`/api/users/${params.userId}/followers?list=${type}`);
+      if (response.ok) {
+        const data = await response.json();
+        setFollowUsers(data.users || []);
+        setShowFollowModal(type);
+      }
+    } catch (error) {
+      console.error('Error fetching follow list:', error);
     }
   };
 
@@ -308,14 +330,20 @@ export default function ProfilePage() {
 
           {/* Following/Followers */}
           <div className="flex space-x-4 mt-4">
-            <span className="text-gray-900 dark:text-white">
+            <button
+              onClick={() => handleShowFollowList('following')}
+              className="text-gray-900 dark:text-white hover:underline"
+            >
               <span className="font-semibold">{followingCount}</span>{' '}
-              <span className="text-gray-500 dark:text-gray-400">Following</span>
-            </span>
-            <span className="text-gray-900 dark:text-white">
+              <span className="text-gray-500 dark:text-gray-400">追蹤中</span>
+            </button>
+            <button
+              onClick={() => handleShowFollowList('followers')}
+              className="text-gray-900 dark:text-white hover:underline"
+            >
               <span className="font-semibold">{followersCount}</span>{' '}
-              <span className="text-gray-500 dark:text-gray-400">Followers</span>
-            </span>
+              <span className="text-gray-500 dark:text-gray-400">追蹤者</span>
+            </button>
           </div>
         </div>
       </div>
@@ -396,6 +424,83 @@ export default function ProfilePage() {
       {questionFiles.length === 0 && jobPostings.length === 0 && !user.teachingExperience && (
         <div className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
           <p>尚無內容</p>
+        </div>
+      )}
+
+      {/* 追蹤者/追蹤中對話框 */}
+      {showFollowModal && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowFollowModal(null)}
+        >
+          <div 
+            className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full max-h-[80vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 標題 */}
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                {showFollowModal === 'followers' ? '追蹤者' : '追蹤中'}
+              </h2>
+              <button
+                onClick={() => setShowFollowModal(null)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* 用戶列表 */}
+            <div className="overflow-y-auto flex-1">
+              {followUsers.length === 0 ? (
+                <div className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                  {showFollowModal === 'followers' ? '還沒有追蹤者' : '還沒有追蹤任何人'}
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {followUsers.map((user) => (
+                    <Link
+                      key={user._id}
+                      href={`/profile/${user._id}`}
+                      onClick={() => setShowFollowModal(null)}
+                      className="flex items-center gap-3 px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <div className="relative w-12 h-12 rounded-full bg-blue-600 dark:bg-blue-700 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {(user.customImage || user.image) && (
+                          <Image
+                            src={user.customImage || user.image || ''}
+                            alt={user.name}
+                            width={48}
+                            height={48}
+                            className="rounded-full object-cover"
+                            unoptimized
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        )}
+                        <span className="text-white text-sm font-bold absolute">
+                          {user.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                          {user.name}
+                        </p>
+                        {user.username && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            @{user.username}
+                          </p>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

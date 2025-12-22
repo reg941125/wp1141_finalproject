@@ -60,6 +60,14 @@ export default function QuestionDetailPage() {
   const [likedAnswers, setLikedAnswers] = useState<Set<string>>(new Set());
   const [deletingAnswers, setDeletingAnswers] = useState<Set<string>>(new Set());
   const [shouldAutoFocus, setShouldAutoFocus] = useState(false);
+  const [showLikesModal, setShowLikesModal] = useState<{ type: 'post' | 'answer'; id: string } | null>(null);
+  const [likeUsers, setLikeUsers] = useState<Array<{
+    _id: string;
+    name: string;
+    image?: string;
+    customImage?: string;
+    username?: string;
+  }>>([]);
 
   const userId = session?.user?.id;
   const userIdRef = useRef(userId);
@@ -362,6 +370,27 @@ export default function QuestionDetailPage() {
     }
   };
 
+  // 獲取點讚用戶列表
+  const handleShowLikes = async (type: 'post' | 'answer', id: string) => {
+    try {
+      let url = '';
+      if (type === 'post') {
+        url = `/api/posts/${id}/likes`;
+      } else {
+        url = `/api/answers/${id}/likes`;
+      }
+      
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        setLikeUsers(data.users || []);
+        setShowLikesModal({ type, id });
+      }
+    } catch (error) {
+      console.error('Error fetching likes:', error);
+    }
+  };
+
   const isAuthor = session?.user?.id === post?.authorId._id.toString();
 
   // 獲取程度標籤的顏色類名
@@ -436,28 +465,38 @@ export default function QuestionDetailPage() {
             </Link>
             <span>{new Date(post.createdAt).toLocaleDateString('zh-TW')}</span>
           </div>
-              <div className="flex items-center space-x-4 text-gray-600 dark:text-gray-300">
-                <div className="flex items-center space-x-1">
-                  <HiEye className="w-4 h-4" />
-                  <span>{post.views}</span>
+              <div>
+                <div className="flex items-center space-x-4 text-gray-600 dark:text-gray-300">
+                  <div className="flex items-center space-x-1">
+                    <HiEye className="w-4 h-4" />
+                    <span>{post.views}</span>
+                  </div>
+                  <button
+                    onClick={handleLike}
+                    disabled={liking}
+                    className={`flex items-center space-x-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                      isPostLiked
+                        ? 'text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300'
+                        : 'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+                    }`}
+                    title={isPostLiked ? '取消按讚' : '按讚'}
+                  >
+                    <IoMdThumbsUp className={`w-4 h-4 ${isPostLiked ? 'fill-current' : ''}`} />
+                    <span>{post.likes}</span>
+                  </button>
+                  <div className="flex items-center space-x-1">
+                    <BiSolidMessageCheck className="w-4 h-4" />
+                    <span>{answers.length}</span>
+                  </div>
                 </div>
-                <button
-                  onClick={handleLike}
-                  disabled={liking}
-                  className={`flex items-center space-x-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                    isPostLiked
-                      ? 'text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300'
-                      : 'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
-                  }`}
-                  title={isPostLiked ? '取消按讚' : '按讚'}
-                >
-                  <IoMdThumbsUp className={`w-4 h-4 ${isPostLiked ? 'fill-current' : ''}`} />
-                  <span>{post.likes}</span>
-                </button>
-                <div className="flex items-center space-x-1">
-                  <BiSolidMessageCheck className="w-4 h-4" />
-                  <span>{answers.length}</span>
-                </div>
+                {post.likes > 0 && (
+                  <button
+                    onClick={() => handleShowLikes('post', post._id)}
+                    className="text-xs text-gray-500 dark:text-gray-400 hover:underline mt-2"
+                  >
+                    查看點讚
+                  </button>
+                )}
               </div>
         </div>
         {(() => {
@@ -552,20 +591,30 @@ export default function QuestionDetailPage() {
                     ))}
                   </div>
                 )}
-                    <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-                      <button
-                        onClick={() => handleAnswerLike(answer._id)}
-                        disabled={likingAnswers.has(answer._id)}
-                        className={`flex items-center space-x-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                          likedAnswers.has(answer._id)
-                            ? 'text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300'
-                            : 'text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
-                        }`}
-                        title={likedAnswers.has(answer._id) ? '取消按讚' : '按讚'}
-                      >
-                        <IoMdThumbsUp className={`w-4 h-4 ${likedAnswers.has(answer._id) ? 'fill-current' : ''}`} />
-                        <span>{answer.likes}</span>
-                      </button>
+                    <div>
+                      <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                        <button
+                          onClick={() => handleAnswerLike(answer._id)}
+                          disabled={likingAnswers.has(answer._id)}
+                          className={`flex items-center space-x-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                            likedAnswers.has(answer._id)
+                              ? 'text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300'
+                              : 'text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+                          }`}
+                          title={likedAnswers.has(answer._id) ? '取消按讚' : '按讚'}
+                        >
+                          <IoMdThumbsUp className={`w-4 h-4 ${likedAnswers.has(answer._id) ? 'fill-current' : ''}`} />
+                          <span>{answer.likes}</span>
+                        </button>
+                      </div>
+                      {answer.likes > 0 && (
+                        <button
+                          onClick={() => handleShowLikes('answer', answer._id)}
+                          className="text-xs text-gray-500 dark:text-gray-400 hover:underline mt-2"
+                        >
+                          查看點讚
+                        </button>
+                      )}
                     </div>
               </div>
             ))}
@@ -670,6 +719,83 @@ export default function QuestionDetailPage() {
               {submitting ? '提交中...' : '提交解答'}
             </button>
           </form>
+        </div>
+      )}
+
+      {/* 點讚用戶對話框 */}
+      {showLikesModal && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowLikesModal(null)}
+        >
+          <div 
+            className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full max-h-[80vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 標題 */}
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                點讚的人
+              </h2>
+              <button
+                onClick={() => setShowLikesModal(null)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* 用戶列表 */}
+            <div className="overflow-y-auto flex-1">
+              {likeUsers.length === 0 ? (
+                <div className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                  還沒有人點讚
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {likeUsers.map((user) => (
+                    <Link
+                      key={user._id}
+                      href={`/profile/${user._id}`}
+                      onClick={() => setShowLikesModal(null)}
+                      className="flex items-center gap-3 px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <div className="relative w-12 h-12 rounded-full bg-blue-600 dark:bg-blue-700 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {(user.customImage || user.image) && (
+                          <Image
+                            src={user.customImage || user.image || ''}
+                            alt={user.name}
+                            width={48}
+                            height={48}
+                            className="rounded-full object-cover"
+                            unoptimized
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        )}
+                        <span className="text-white text-sm font-bold absolute">
+                          {user.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                          {user.name}
+                        </p>
+                        {user.username && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            @{user.username}
+                          </p>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
