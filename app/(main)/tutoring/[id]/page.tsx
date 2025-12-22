@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
@@ -46,6 +46,7 @@ export default function JobPostingDetailPage() {
   const [deleting, setDeleting] = useState(false);
 
   const userId = session?.user?.id;
+  const userIdRef = useRef(userId);
 
   useEffect(() => {
     const fetchPosting = async () => {
@@ -56,7 +57,8 @@ export default function JobPostingDetailPage() {
           setPosting(data);
 
           // 如果已登入，獲取按讚狀態
-          if (userId) {
+          const currentUserId = session?.user?.id;
+          if (currentUserId) {
             try {
               const likeResponse = await fetch(`/api/jobs/${params.id}/like`);
               if (likeResponse.ok) {
@@ -79,7 +81,43 @@ export default function JobPostingDetailPage() {
       fetchPosting();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.id, userId]);
+  }, [params.id]);
+
+  // 只在 userId 真正改變時（登入/登出）才重新獲取
+  useEffect(() => {
+    if (userIdRef.current !== userId && params.id) {
+      userIdRef.current = userId;
+      setLoading(true);
+      const fetchPosting = async () => {
+        try {
+          const response = await fetch(`/api/jobs/${params.id}`);
+          if (response.ok) {
+            const data = await response.json();
+            setPosting(data);
+
+            const currentUserId = session?.user?.id;
+            if (currentUserId) {
+              try {
+                const likeResponse = await fetch(`/api/jobs/${params.id}/like`);
+                if (likeResponse.ok) {
+                  const { liked } = await likeResponse.json();
+                  setIsLiked(liked);
+                }
+              } catch (error) {
+                console.error('Error fetching like status:', error);
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching posting:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchPosting();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   const handleLike = async () => {
     if (!session) {

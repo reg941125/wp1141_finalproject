@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -49,6 +49,7 @@ export default function TutoringPage() {
   const [likingPostings, setLikingPostings] = useState<Set<string>>(new Set());
 
   const userId = session?.user?.id;
+  const userIdRef = useRef(userId);
 
   const fetchPostings = useCallback(async () => {
     try {
@@ -64,7 +65,8 @@ export default function TutoringPage() {
       setPostings(data);
 
       // 如果已登入，獲取按讚狀態
-      if (userId) {
+      const currentUserId = session?.user?.id;
+      if (currentUserId) {
         const postingIds = data.map((posting: JobPosting) => posting._id);
         if (postingIds.length > 0) {
           try {
@@ -87,11 +89,20 @@ export default function TutoringPage() {
     } finally {
       setLoading(false);
     }
-  }, [typeFilter, tagFilter, educationFilter, hourlyRateMin, hourlyRateMax, userId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [typeFilter, tagFilter, educationFilter, hourlyRateMin, hourlyRateMax]);
 
   useEffect(() => {
     fetchPostings();
   }, [fetchPostings]);
+
+  // 只在 userId 真正改變時（登入/登出）才重新獲取
+  useEffect(() => {
+    if (userIdRef.current !== userId) {
+      userIdRef.current = userId;
+      fetchPostings();
+    }
+  }, [userId, fetchPostings]);
 
   const handleSubmitPosting = async (data: JobPostingData) => {
     try {

@@ -87,10 +87,11 @@ export async function POST(request: Request) {
       if (post && post.authorId.toString() !== session.user.id) {
         // 只在回覆他人的貼文時創建通知
         await NotificationModel.create({
-          recipientId: post.authorId,
-          senderId: session.user.id,
+          userId: post.authorId,
+          triggeredBy: session.user.id,
           type: 'reply',
           postId: post._id,
+          content: '有人回答了你的問題',
         });
       }
     } catch (notifError) {

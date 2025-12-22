@@ -52,8 +52,8 @@ export async function POST(
         try {
           // 檢查是否已經有相同的通知存在（避免重複通知）
           const existingNotification = await NotificationModel.findOne({
-            recipientId: answer.authorId,
-            senderId: session.user.id,
+            userId: answer.authorId,
+            triggeredBy: session.user.id,
             type: 'like',
             postId: answer.postId,
             createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } // 24小時內
@@ -61,10 +61,11 @@ export async function POST(
 
           if (!existingNotification) {
             await NotificationModel.create({
-              recipientId: answer.authorId,
-              senderId: session.user.id,
+              userId: answer.authorId,
+              triggeredBy: session.user.id,
               type: 'like',
               postId: answer.postId,
+              content: '有人按讚了你的回答',
             });
           }
         } catch (notifError) {

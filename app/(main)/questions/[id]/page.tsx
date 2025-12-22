@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
@@ -59,6 +59,7 @@ export default function QuestionDetailPage() {
   const [likedAnswers, setLikedAnswers] = useState<Set<string>>(new Set());
 
   const userId = session?.user?.id;
+  const userIdRef = useRef(userId);
 
   useEffect(() => {
     if (params.id) {
@@ -66,7 +67,8 @@ export default function QuestionDetailPage() {
         await fetchPost();
         const answersData = await fetchAnswers();
         // 獲取按讚狀態
-        if (userId) {
+        const currentUserId = session?.user?.id;
+        if (currentUserId) {
           const answerIds = answersData.map((answer: Answer) => answer._id);
           await fetchLikeStatus(answerIds);
         }
@@ -74,7 +76,25 @@ export default function QuestionDetailPage() {
       loadData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.id, userId]);
+  }, [params.id]);
+
+  // 只在 userId 真正改變時（登入/登出）才重新獲取
+  useEffect(() => {
+    if (userIdRef.current !== userId && params.id) {
+      userIdRef.current = userId;
+      const loadData = async () => {
+        await fetchPost(false);
+        const answersData = await fetchAnswers();
+        const currentUserId = session?.user?.id;
+        if (currentUserId) {
+          const answerIds = answersData.map((answer: Answer) => answer._id);
+          await fetchLikeStatus(answerIds);
+        }
+      };
+      loadData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   const fetchPost = async (incrementViews = true) => {
     try {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -44,6 +44,7 @@ export default function HomePage() {
 
 
   const userId = session?.user?.id;
+  const userIdRef = useRef(userId);
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -61,7 +62,8 @@ export default function HomePage() {
       setLevelOptions(Array.from(levelSet));
 
       // 如果用戶已登入，獲取按讚狀態
-      if (userId) {
+      const currentUserId = session?.user?.id;
+      if (currentUserId) {
         const postIds = data.map((post: Post) => post._id);
         if (postIds.length > 0) {
           try {
@@ -84,11 +86,20 @@ export default function HomePage() {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     fetchPosts();
   }, [fetchPosts]);
+
+  // 只在 userId 真正改變時（登入/登出）才重新獲取
+  useEffect(() => {
+    if (userIdRef.current !== userId) {
+      userIdRef.current = userId;
+      fetchPosts();
+    }
+  }, [userId, fetchPosts]);
 
   // 監聽滾動事件，決定是否顯示浮動按鈕
   useEffect(() => {

@@ -61,3 +61,4 @@
 - ✅ DELETE /api/jobs/[id] - 正常
 - ✅ POST /api/jobs/[id]/like - 正常
 
+

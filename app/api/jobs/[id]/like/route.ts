@@ -53,7 +53,8 @@ export async function POST(
           userId: posting.authorId,
           type: 'like',
           postId: params.id,
-          fromUserId: session.user.id,
+          triggeredBy: session.user.id,
+          content: '有人按讚了你的徵人訊息',
         });
       }
     }
@@ -101,4 +102,5 @@ export async function GET(
     );
   }
 }
+
 
