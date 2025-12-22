@@ -8,7 +8,7 @@ import MarkdownRenderer from '@/components/MarkdownRenderer';
 import MarkdownEditor from '@/components/MarkdownEditor';
 import Image from 'next/image';
 import { HiEye } from 'react-icons/hi';
-import { IoMdThumbsUp } from 'react-icons/io';
+import { IoMdThumbsUp, IoMdShare } from 'react-icons/io';
 import { BiSolidMessageCheck } from 'react-icons/bi';
 import { Edit, Trash2, Paperclip, X } from 'lucide-react';
 
@@ -68,6 +68,7 @@ export default function QuestionDetailPage() {
     customImage?: string;
     username?: string;
   }>>([]);
+  const [copied, setCopied] = useState(false);
 
   const userId = session?.user?.id;
   const userIdRef = useRef(userId);
@@ -391,6 +392,23 @@ export default function QuestionDetailPage() {
     }
   };
 
+  // 處理分享（複製網址）
+  const handleShare = async () => {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+    const url = `${baseUrl}/questions/${params.id}`;
+    
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+    } catch (error) {
+      console.error('Error copying to clipboard:', error);
+      alert('複製失敗，請稍後再試');
+    }
+  };
+
   const isAuthor = session?.user?.id === post?.authorId._id.toString();
 
   // 獲取程度標籤的顏色類名
@@ -466,6 +484,7 @@ export default function QuestionDetailPage() {
             <span>{new Date(post.createdAt).toLocaleDateString('zh-TW')}</span>
           </div>
               <div>
+                {/* 統計數據：桌面版顯示在一行 */}
                 <div className="flex items-center space-x-4 text-gray-600 dark:text-gray-300">
                   <div className="flex items-center space-x-1">
                     <HiEye className="w-4 h-4" />
@@ -488,15 +507,45 @@ export default function QuestionDetailPage() {
                     <BiSolidMessageCheck className="w-4 h-4" />
                     <span>{answers.length}</span>
                   </div>
-                </div>
-                {post.likes > 0 && (
+                  {/* 桌面版：分享按鈕 */}
                   <button
-                    onClick={() => handleShowLikes('post', post._id)}
-                    className="text-xs text-gray-500 dark:text-gray-400 hover:underline mt-2"
+                    onClick={handleShare}
+                    className="hidden sm:flex items-center space-x-1 relative transition-colors hover:text-blue-600 dark:hover:text-blue-400"
+                    title="分享貼文"
                   >
-                    查看點讚
+                    <IoMdShare className="w-4 h-4" />
+                    {copied && (
+                      <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 dark:bg-gray-700 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
+                        已複製連結！
+                      </span>
+                    )}
                   </button>
-                )}
+                </div>
+                {/* 第二行：查看點讚和分享（手機版） */}
+                <div className="flex items-center gap-3 mt-2">
+                  {post.likes > 0 && (
+                    <button
+                      onClick={() => handleShowLikes('post', post._id)}
+                      className="text-xs text-gray-500 dark:text-gray-400 hover:underline"
+                    >
+                      查看點讚
+                    </button>
+                  )}
+                  {/* 手機版：分享按鈕 */}
+                  <button
+                    onClick={handleShare}
+                    className="sm:hidden flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 relative"
+                    title="分享貼文"
+                  >
+                    <IoMdShare className="w-3.5 h-3.5" />
+                    <span>分享</span>
+                    {copied && (
+                      <span className="absolute -top-8 left-0 bg-gray-900 dark:bg-gray-700 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
+                        已複製連結！
+                      </span>
+                    )}
+                  </button>
+                </div>
               </div>
         </div>
         {(() => {

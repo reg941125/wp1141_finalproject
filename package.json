@@ -11,6 +11,7 @@
   "dependencies": {
     "@types/nodemailer": "^7.0.4",
     "bcryptjs": "^2.4.3",
+    "cheerio": "^1.1.2",
     "cloudinary": "^2.8.0",
     "clsx": "^2.1.1",
     "html2canvas": "^1.4.1",

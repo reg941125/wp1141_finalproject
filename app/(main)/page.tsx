@@ -330,7 +330,7 @@ export default function HomePage() {
                 {post.title}
               </h2>
               <div className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
-                <MarkdownRenderer content={post.content.substring(0, 200)} />
+                <MarkdownRenderer content={post.content.substring(0, 200)} preview={true} />
               </div>
               
               {/* 作者信息欄 */}

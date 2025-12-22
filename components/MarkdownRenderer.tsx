@@ -7,53 +7,99 @@ import rehypeKatex from 'rehype-katex';
 import { parseLaTeX } from './LaTeXParser';
 import Image from 'next/image';
 import PostLinkEmbed from './PostLinkEmbed';
+import ExternalLinkPreview from './ExternalLinkPreview';
 import { useMemo } from 'react';
 
 interface MarkdownRendererProps {
   content: string;
   className?: string;
+  preview?: boolean; // 预览模式：简化显示，不显示图片和嵌入内容
 }
 
-export default function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
+export default function MarkdownRenderer({ content, className = '', preview = false }: MarkdownRendererProps) {
   // Pre-process LaTeX syntax
   const processedContent = parseLaTeX(content);
 
-  // 檢測貼文連結並直接分割內容
+  // 檢測站內貼文連結和外部連結並直接分割內容
   const contentParts = useMemo(() => {
-    const parts: Array<{ type: 'text' | 'embed'; content: string }> = [];
+    const parts: Array<{ type: 'text' | 'post-embed' | 'external-link'; content: string }> = [];
     
-    // 匹配貼文連結的正則表達式
+    // 匹配站內貼文連結的正則表達式
     const postLinkRegex = /https?:\/\/[^\/\s]+\/questions\/([a-f0-9]{24})/gi;
     
-    let lastIndex = 0;
+    // 匹配外部連結的正則表達式（獨立一行的連結）
+    const externalLinkRegex = /^(https?:\/\/[^\s]+)$/gm;
+    
+    let content = processedContent;
+    let allMatches: Array<{ index: number; length: number; type: 'post-embed' | 'external-link'; content: string }> = [];
+    
+    // 收集所有站內貼文連結
     let match;
-    
-    // 重置正則表達式的 lastIndex
     postLinkRegex.lastIndex = 0;
+    while ((match = postLinkRegex.exec(content)) !== null) {
+      allMatches.push({
+        index: match.index,
+        length: match[0].length,
+        type: 'post-embed',
+        content: match[1] // postId
+      });
+    }
     
-    while ((match = postLinkRegex.exec(processedContent)) !== null) {
+    // 收集所有外部連結（排除已經是站內連結的）
+    externalLinkRegex.lastIndex = 0;
+    while ((match = externalLinkRegex.exec(content)) !== null) {
+      const url = match[1];
+      // 檢查是否是站內連結
+      if (!url.match(/\/questions\/[a-f0-9]{24}/)) {
+        allMatches.push({
+          index: match.index,
+          length: match[0].length,
+          type: 'external-link',
+          content: url
+        });
+      }
+    }
+    
+    // 按位置排序
+    allMatches.sort((a, b) => a.index - b.index);
+    
+    // 移除重疊的匹配（優先保留站內連結）
+    const filteredMatches = [];
+    for (let i = 0; i < allMatches.length; i++) {
+      const current = allMatches[i];
+      const hasOverlap = filteredMatches.some(prev => 
+        current.index < prev.index + prev.length
+      );
+      if (!hasOverlap) {
+        filteredMatches.push(current);
+      }
+    }
+    
+    // 構建 parts 數組
+    let lastIndex = 0;
+    for (const match of filteredMatches) {
       // 添加連結前的文本
       if (match.index > lastIndex) {
         parts.push({
           type: 'text',
-          content: processedContent.substring(lastIndex, match.index)
+          content: content.substring(lastIndex, match.index)
         });
       }
       
-      // 添加貼文嵌入
+      // 添加嵌入內容
       parts.push({
-        type: 'embed',
-        content: match[1] // postId
+        type: match.type,
+        content: match.content
       });
       
-      lastIndex = match.index + match[0].length;
+      lastIndex = match.index + match.length;
     }
     
     // 添加剩餘的文本
-    if (lastIndex < processedContent.length) {
+    if (lastIndex < content.length) {
       parts.push({
         type: 'text',
-        content: processedContent.substring(lastIndex)
+        content: content.substring(lastIndex)
       });
     }
     
@@ -61,7 +107,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
     if (parts.length === 0) {
       parts.push({
         type: 'text',
-        content: processedContent
+        content: content
       });
     }
     
@@ -71,8 +117,20 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
   return (
     <div className={`prose prose-sm max-w-none ${className}`}>
       {contentParts.map((part, index) => {
-        if (part.type === 'embed') {
-          return <PostLinkEmbed key={`embed-${index}`} postId={part.content} />;
+        if (part.type === 'post-embed') {
+          // 预览模式：只显示文字
+          if (preview) {
+            return <span key={`post-embed-${index}`} className="text-gray-500 dark:text-gray-400 text-sm">[嵌入貼文]</span>;
+          }
+          return <PostLinkEmbed key={`post-embed-${index}`} postId={part.content} />;
+        }
+        
+        if (part.type === 'external-link') {
+          // 预览模式：只显示文字
+          if (preview) {
+            return <span key={`external-link-${index}`} className="text-gray-500 dark:text-gray-400 text-sm">[外部連結]</span>;
+          }
+          return <ExternalLinkPreview key={`external-link-${index}`} url={part.content} />;
         }
         
         return (
@@ -82,6 +140,11 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
             rehypePlugins={[[rehypeKatex, { throwOnError: false }]]}
             components={{
               img: ({ node, ...props }: any) => {
+                // 预览模式：只显示 <图片> 文字
+                if (preview) {
+                  return <span className="text-gray-500 dark:text-gray-400 text-sm">&lt;圖片&gt;</span>;
+                }
+                
                 if (!props.src) {
                   return <img {...props} alt={props.alt || ''} className="rounded-lg" />;
                 }
