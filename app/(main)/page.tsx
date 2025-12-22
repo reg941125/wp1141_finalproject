@@ -423,10 +423,15 @@ export default function HomePage() {
                         <IoMdThumbsUp className={`w-4 h-4 ${likedPosts.has(post._id) ? 'fill-current' : ''}`} />
                         <span>{post.likes}</span>
                       </button>
-                      <div className="flex items-center space-x-1">
+                      <Link
+                        href={`/questions/${post._id}#answer`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center space-x-1 transition-colors hover:text-blue-600 dark:hover:text-blue-400"
+                        title="查看留言"
+                      >
                         <BiSolidMessageCheck className="w-4 h-4" />
                         <span>{post.answersCount ?? 0}</span>
-                      </div>
+                      </Link>
                       <button
                         onClick={(e) => handleShare(post._id, e)}
                         className="relative flex items-center space-x-1 transition-colors hover:text-blue-600 dark:hover:text-blue-400"

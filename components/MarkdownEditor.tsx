@@ -11,6 +11,7 @@ interface MarkdownEditorProps {
   placeholder?: string;
   className?: string;
   showPreview?: boolean;
+  autoFocus?: boolean;
 }
 
 interface LaTeXInputState {
@@ -32,6 +33,7 @@ export default function MarkdownEditor({
   placeholder = '輸入內容...',
   className = '',
   showPreview = true,
+  autoFocus = false,
 }: MarkdownEditorProps) {
   const [latexInput, setLatexInput] = useState<LaTeXInputState>({
     show: false,
@@ -306,6 +308,13 @@ export default function MarkdownEditor({
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [latexInput.show, handleLaTeXCancel]);
+
+  // Handle autoFocus
+  useEffect(() => {
+    if (autoFocus && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [autoFocus]);
 
   return (
     <div ref={containerRef} className={`border border-gray-300 dark:border-gray-600 rounded-lg ${className} transition-colors bg-white dark:bg-gray-800 overflow-hidden`}>

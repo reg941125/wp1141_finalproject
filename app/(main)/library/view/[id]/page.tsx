@@ -199,7 +199,7 @@ export default function ViewFilePage() {
           <div className="mb-6">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">內容</h2>
             <div className="prose dark:prose-invert max-w-none">
-              <MarkdownRenderer content={file.content} />
+              <MarkdownRenderer content={file.content} enableFileEmbed={true} />
             </div>
           </div>
         )}

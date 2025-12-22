@@ -10,7 +10,7 @@ import Image from 'next/image';
 import { HiEye } from 'react-icons/hi';
 import { IoMdThumbsUp } from 'react-icons/io';
 import { BiSolidMessageCheck } from 'react-icons/bi';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, Paperclip, X } from 'lucide-react';
 
 interface Post {
   _id: string;
@@ -51,15 +51,20 @@ export default function QuestionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [answerContent, setAnswerContent] = useState('');
   const [answerImages, setAnswerImages] = useState<string[]>([]);
+  const [answerFiles, setAnswerFiles] = useState<Array<{ url: string; name: string; type: string }>>([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [liking, setLiking] = useState(false);
   const [likingAnswers, setLikingAnswers] = useState<Set<string>>(new Set());
   const [isPostLiked, setIsPostLiked] = useState(false);
   const [likedAnswers, setLikedAnswers] = useState<Set<string>>(new Set());
+  const [deletingAnswers, setDeletingAnswers] = useState<Set<string>>(new Set());
+  const [shouldAutoFocus, setShouldAutoFocus] = useState(false);
 
   const userId = session?.user?.id;
   const userIdRef = useRef(userId);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const answerSectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (params.id) {
@@ -95,6 +100,21 @@ export default function QuestionDetailPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
+
+  // 檢測 URL hash，如果是 #answer 則滾動到留言區並聚焦輸入框
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.hash === '#answer' && !loading && post) {
+      setShouldAutoFocus(true);
+      // 等待頁面渲染完成
+      const timer = setTimeout(() => {
+        if (answerSectionRef.current) {
+          answerSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 300);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [post, loading]);
 
   const fetchPost = async (incrementViews = true) => {
     try {
@@ -151,7 +171,7 @@ export default function QuestionDetailPage() {
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
@@ -168,14 +188,58 @@ export default function QuestionDetailPage() {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setAnswerImages([...answerImages, ...data.urls]);
+        const { urls } = await response.json();
+        
+        // 將上傳的檔案添加到列表
+        const newFiles = Array.from(files).map((file, index) => ({
+          url: urls[index],
+          name: file.name,
+          type: file.type,
+        }));
+        setAnswerFiles([...answerFiles, ...newFiles]);
+
+        // 將檔案添加到內容末尾
+        let newContent = answerContent;
+        newFiles.forEach((file) => {
+          if (file.type.startsWith('image/')) {
+            // 圖片使用 markdown 圖片語法
+            newContent += `\n![${file.name}](${file.url})\n`;
+          } else {
+            // 其他檔案使用內嵌連結（會被 MarkdownRenderer 解析為 FileEmbed）
+            newContent += `\n[📎 ${file.name}](${file.url})\n`;
+          }
+        });
+        setAnswerContent(newContent);
+      } else {
+        alert('檔案上傳失敗，請稍後再試');
       }
     } catch (error) {
-      console.error('Error uploading images:', error);
+      console.error('Error uploading files:', error);
+      alert('檔案上傳失敗，請稍後再試');
     } finally {
       setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
+  };
+
+  const handleRemoveFile = (index: number) => {
+    const fileToRemove = answerFiles[index];
+    
+    // 從內容中移除對應的 markdown
+    let newContent = answerContent;
+    if (fileToRemove.type.startsWith('image/')) {
+      newContent = newContent.replace(`![${fileToRemove.name}](${fileToRemove.url})`, '');
+    } else {
+      newContent = newContent.replace(`[📎 ${fileToRemove.name}](${fileToRemove.url})`, '');
+    }
+    // 清理多餘的換行
+    newContent = newContent.replace(/\n{3,}/g, '\n\n').trim();
+    setAnswerContent(newContent);
+    
+    // 從列表中移除
+    setAnswerFiles(answerFiles.filter((_, i) => i !== index));
   };
 
   const handleSubmitAnswer = async (e: React.FormEvent) => {
@@ -197,6 +261,7 @@ export default function QuestionDetailPage() {
       if (response.ok) {
         setAnswerContent('');
         setAnswerImages([]);
+        setAnswerFiles([]);
         fetchAnswers();
       }
     } catch (error) {
@@ -429,7 +494,7 @@ export default function QuestionDetailPage() {
           );
         })()}
         <div className="prose max-w-none">
-          <MarkdownRenderer content={post.content} />
+          <MarkdownRenderer content={post.content} enableFileEmbed={true} />
         </div>
       </div>
 
@@ -471,7 +536,7 @@ export default function QuestionDetailPage() {
                   </span>
                 </div>
                 <div className="prose max-w-none mb-4">
-                  <MarkdownRenderer content={answer.content} />
+                  <MarkdownRenderer content={answer.content} enableFileEmbed={true} />
                 </div>
                 {answer.images.length > 0 && (
                   <div className="grid grid-cols-2 gap-4 mb-4">
@@ -509,48 +574,93 @@ export default function QuestionDetailPage() {
       </div>
 
       {session && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 p-6 transition-colors">
+        <div 
+          ref={answerSectionRef}
+          id="answer"
+          className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 p-6 transition-colors"
+        >
           <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">回答問題</h2>
           <form onSubmit={handleSubmitAnswer}>
-            <MarkdownEditor
-              value={answerContent}
-              onChange={setAnswerContent}
-              placeholder="輸入您的解答..."
-            />
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                上傳圖片
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleImageUpload}
-                disabled={uploading}
-                className="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 dark:file:bg-blue-900/30 file:text-blue-700 dark:file:text-blue-300 hover:file:bg-blue-100 dark:hover:file:bg-blue-900/50 transition-colors"
-              />
-              {answerImages.length > 0 && (
-                <div className="mt-4 grid grid-cols-4 gap-4">
-                  {answerImages.map((url, idx) => (
-                    <div key={idx} className="relative">
-                      <Image
-                        src={url}
-                        alt={`Upload ${idx + 1}`}
-                        width={200}
-                        height={200}
-                        className="rounded-lg"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setAnswerImages(answerImages.filter((_, i) => i !== idx))}
-                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  解答內容
+                </label>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="上傳檔案"
+                >
+                  <Paperclip className="w-4 h-4" />
+                  {uploading ? '上傳中...' : '上傳檔案'}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  accept="image/*,application/pdf,.doc,.docx,.txt"
+                />
+              </div>
+
+              {/* 已上傳的檔案列表 */}
+              {answerFiles.length > 0 && (
+                <div className="mb-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-md">
+                  <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                    已上傳的檔案：
+                  </div>
+                  <div className="space-y-2">
+                    {answerFiles.map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 p-2 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600"
                       >
-                        ×
-                      </button>
-                    </div>
-                  ))}
+                        {file.type.startsWith('image/') ? (
+                          <div className="relative w-12 h-12 flex-shrink-0">
+                            <Image
+                              src={file.url}
+                              alt={file.name}
+                              fill
+                              className="object-cover rounded"
+                              unoptimized
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded">
+                            <Paperclip className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm text-gray-900 dark:text-gray-100 truncate">
+                            {file.name}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            {file.type.startsWith('image/') ? '圖片' : '檔案'}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFile(index)}
+                          className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                          title="移除檔案"
+                        >
+                          <X className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
+
+              <MarkdownEditor
+                value={answerContent}
+                onChange={setAnswerContent}
+                placeholder="輸入您的解答..."
+                autoFocus={shouldAutoFocus}
+              />
             </div>
             <button
               type="submit"
