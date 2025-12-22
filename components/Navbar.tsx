@@ -322,28 +322,50 @@ export default function Navbar() {
                               >
                                 <div className="flex items-start gap-3">
                                   {/* 觸發者頭像 */}
-                                  {notification.triggeredBy.image ? (
-                                    <Image
-                                      src={notification.triggeredBy.image}
-                                      alt={notification.triggeredBy.name}
-                                      width={40}
-                                      height={40}
-                                      className="rounded-full flex-shrink-0"
-                                      unoptimized
-                                    />
-                                  ) : (
-                                    <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center flex-shrink-0">
-                                      <span className="text-gray-700 dark:text-gray-300 text-sm font-bold">
-                                        {notification.triggeredBy.name.charAt(0).toUpperCase()}
-                                      </span>
-                                    </div>
-                                  )}
+                                  <Link
+                                    href={`/profile/${notification.triggeredBy._id}`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (!notification.read) {
+                                        markAsRead(notification._id);
+                                      }
+                                      setIsNotificationOpen(false);
+                                    }}
+                                    className="hover:opacity-80 transition-opacity flex-shrink-0"
+                                  >
+                                    {notification.triggeredBy.image ? (
+                                      <Image
+                                        src={notification.triggeredBy.image}
+                                        alt={notification.triggeredBy.name}
+                                        width={40}
+                                        height={40}
+                                        className="rounded-full"
+                                        unoptimized
+                                      />
+                                    ) : (
+                                      <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+                                        <span className="text-gray-700 dark:text-gray-300 text-sm font-bold">
+                                          {notification.triggeredBy.name.charAt(0).toUpperCase()}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </Link>
 
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm text-gray-900 dark:text-gray-100">
-                                      <span className="font-semibold">
+                                      <Link
+                                        href={`/profile/${notification.triggeredBy._id}`}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          if (!notification.read) {
+                                            markAsRead(notification._id);
+                                          }
+                                          setIsNotificationOpen(false);
+                                        }}
+                                        className="font-semibold hover:underline"
+                                      >
                                         {notification.triggeredBy.name}
-                                      </span>{' '}
+                                      </Link>{' '}
                                       {notification.content}
                                     </p>
                                     {notification.postId && (

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import { HiEye } from 'react-icons/hi';
-import { IoMdThumbsUp } from 'react-icons/io';
+import { IoMdThumbsUp, IoMdShare } from 'react-icons/io';
 import { BiSolidMessageCheck } from 'react-icons/bi';
 import { RiQuestionnaireFill } from "react-icons/ri";
 
@@ -41,6 +41,7 @@ export default function HomePage() {
   const [showFloatingButton, setShowFloatingButton] = useState(false);
   const [likingPosts, setLikingPosts] = useState<Set<string>>(new Set());
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
+  const [copiedPostId, setCopiedPostId] = useState<string | null>(null);
 
 
   const userId = session?.user?.id;
@@ -202,6 +203,27 @@ export default function HomePage() {
         newSet.delete(postId);
         return newSet;
       });
+    }
+  };
+
+  // 處理分享（複製網址）
+  const handleShare = async (postId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // 使用環境變量或當前域名
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+    const url = `${baseUrl}/questions/${postId}`;
+    
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedPostId(postId);
+      setTimeout(() => {
+        setCopiedPostId(null);
+      }, 2000);
+    } catch (error) {
+      console.error('Error copying to clipboard:', error);
+      alert('複製失敗，請稍後再試');
     }
   };
 
@@ -405,6 +427,18 @@ export default function HomePage() {
                         <BiSolidMessageCheck className="w-4 h-4" />
                         <span>{post.answersCount ?? 0}</span>
                       </div>
+                      <button
+                        onClick={(e) => handleShare(post._id, e)}
+                        className="relative flex items-center space-x-1 transition-colors hover:text-blue-600 dark:hover:text-blue-400"
+                        title="分享貼文"
+                      >
+                        <IoMdShare className="w-4 h-4" />
+                        {copiedPostId === post._id && (
+                          <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 dark:bg-gray-700 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                            已複製連結！
+                          </span>
+                        )}
+                      </button>
                     </div>
                   </div>
                 );

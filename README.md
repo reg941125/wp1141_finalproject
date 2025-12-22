@@ -33,6 +33,9 @@ MONGODB_URI=your_mongodb_atlas_connection_string
 NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=your_nextauth_secret_key
 
+# 應用程式 URL（用於分享連結等功能）
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
 # Google OAuth
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret

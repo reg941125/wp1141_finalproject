@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface Conversation {
   _id: string;
@@ -266,7 +267,11 @@ export default function ChatPage() {
                   }`}
                 >
                   <div className="flex items-center space-x-3">
-                    <div className="flex-shrink-0">
+                    <Link
+                      href={`/profile/${otherUser._id}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex-shrink-0 hover:opacity-80 transition-opacity"
+                    >
                       {otherUser.image ? (
                         <div className="relative w-12 h-12 rounded-full overflow-hidden bg-gray-300 dark:bg-gray-600">
                           <Image
@@ -287,14 +292,18 @@ export default function ChatPage() {
                           </span>
                         </div>
                       )}
-                    </div>
+                    </Link>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
-                        <p className={`text-sm font-medium truncate ${
-                          unreadCount > 0 ? 'text-gray-900 dark:text-white font-semibold' : 'text-gray-900 dark:text-white'
-                        }`}>
+                        <Link
+                          href={`/profile/${otherUser._id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className={`text-sm font-medium truncate hover:underline ${
+                            unreadCount > 0 ? 'text-gray-900 dark:text-white font-semibold' : 'text-gray-900 dark:text-white'
+                          }`}
+                        >
                           {otherUser.name}
-                        </p>
+                        </Link>
                         {conversation.lastMessageAt && (
                           <p className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0 ml-2">
                             {new Date(conversation.lastMessageAt).toLocaleTimeString('zh-TW', {
@@ -338,38 +347,46 @@ export default function ChatPage() {
             <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center space-x-3">
               <button
                 onClick={() => router.push('/chat', { scroll: false })}
-                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors md:hidden"
                 title="返回對話列表"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
-              {otherUser.image ? (
-                <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-300 dark:bg-gray-600">
-                  <Image
-                    src={otherUser.image}
-                    alt={otherUser.name}
-                    width={40}
-                    height={40}
-                    className="rounded-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                </div>
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                  <span className="text-gray-600 dark:text-gray-300 text-sm font-medium">
-                    {otherUser.name.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-              )}
-              <div>
+              <Link
+                href={`/profile/${otherUser._id}`}
+                className="flex-shrink-0 hover:opacity-80 transition-opacity"
+              >
+                {otherUser.image ? (
+                  <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-300 dark:bg-gray-600">
+                    <Image
+                      src={otherUser.image}
+                      alt={otherUser.name}
+                      width={40}
+                      height={40}
+                      className="rounded-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+                    <span className="text-gray-600 dark:text-gray-300 text-sm font-medium">
+                      {otherUser.name.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+              </Link>
+              <Link
+                href={`/profile/${otherUser._id}`}
+                className="hover:underline"
+              >
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                   {otherUser.name}
                 </h2>
-              </div>
+              </Link>
             </div>
 
             {/* Messages */}
