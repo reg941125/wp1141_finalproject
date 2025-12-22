@@ -69,6 +69,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const user = await UserModel.findOne({ email: session.user.email });
         if (user) {
           (session.user as any).id = user._id.toString();
+          // 优先使用自定义头像，如果没有则使用原始头像
+          session.user.image = user.customImage || user.image || 'https://res.cloudinary.com/dga4lpnml/image/upload/v1734963000/default-avatar_rbpybo.png';
         }
       }
       return session;

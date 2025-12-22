@@ -13,6 +13,7 @@ export default function EditProfilePage() {
   const [teachingExperience, setTeachingExperience] = useState('');
   const [username, setUsername] = useState('');
   const [image, setImage] = useState('');
+  const [customImage, setCustomImage] = useState('');
   const [bannerImage, setBannerImage] = useState('');
   const [educationLevel, setEducationLevel] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -50,6 +51,7 @@ export default function EditProfilePage() {
         setTeachingExperience(data.teachingExperience || '');
         setUsername(data.username || '');
         setImage(data.image || '');
+        setCustomImage(data.customImage || '');
         setBannerImage(data.bannerImage || '');
         setEducationLevel(data.educationLevel || '');
       }
@@ -77,7 +79,7 @@ export default function EditProfilePage() {
 
       if (response.ok) {
         const data = await response.json();
-        setImage(data.url);
+        setCustomImage(data.url);
       }
     } catch (error) {
       console.error('Error uploading avatar:', error);
@@ -169,7 +171,7 @@ export default function EditProfilePage() {
           bio,
           teachingExperience,
           username: username || undefined,
-          image,
+          customImage,
           bannerImage,
           educationLevel: educationLevel || undefined,
         }),
@@ -246,9 +248,9 @@ export default function EditProfilePage() {
             </label>
             <div className="flex items-center space-x-4">
               <div className="relative w-24 h-24 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700">
-                {image ? (
+                {(customImage || image) ? (
                   <Image
-                    src={image}
+                    src={customImage || image}
                     alt="Avatar"
                     fill
                     className="object-cover"
@@ -260,17 +262,31 @@ export default function EditProfilePage() {
                   </div>
                 )}
               </div>
-              <label className="cursor-pointer border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-900 dark:text-white transition-colors">
-                {uploadingAvatar ? '上傳中...' : '上傳頭像'}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarUpload}
-                  disabled={uploadingAvatar}
-                  className="hidden"
-                />
-              </label>
+              <div className="flex flex-col gap-2">
+                <label className="cursor-pointer border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-900 dark:text-white transition-colors">
+                  {uploadingAvatar ? '上傳中...' : customImage ? '更換頭像' : '上傳頭像'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    disabled={uploadingAvatar}
+                    className="hidden"
+                  />
+                </label>
+                {customImage && (
+                  <button
+                    type="button"
+                    onClick={() => setCustomImage('')}
+                    className="text-sm text-red-600 dark:text-red-400 hover:underline"
+                  >
+                    重設為預設頭像
+                  </button>
+                )}
+              </div>
             </div>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {image && !customImage ? '目前使用預設頭像（來自 Google 或系統預設）' : ''}
+            </p>
           </div>
 
           {/* Username */}

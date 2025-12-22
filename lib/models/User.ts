@@ -23,6 +23,9 @@ const UserSchema = new Schema<User>(
     image: {
       type: String,
     },
+    customImage: {
+      type: String,
+    },
     bannerImage: {
       type: String,
     },

@@ -43,7 +43,7 @@ export async function GET(request: Request) {
     }
 
     const files = await QuestionFileModel.find(query)
-      .populate('authorId', 'name image')
+      .populate('authorId', 'name image customImage')
       .sort({ createdAt: -1 })
       .limit(100);
 

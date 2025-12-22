@@ -13,6 +13,7 @@ interface User {
   email: string;
   username?: string;
   image?: string;
+  customImage?: string;
   bannerImage?: string;
   bio?: string;
   teachingExperience?: string;
@@ -222,10 +223,10 @@ export default function ProfilePage() {
         <div className="flex justify-between items-start">
           {/* Profile Picture - overlapping banner */}
           <div className="relative -mt-20 mb-4">
-            {user.image ? (
+            {(user.customImage || user.image) ? (
               <div className="w-32 h-32 rounded-full border-4 border-white dark:border-gray-900 bg-gray-300 dark:bg-gray-600 overflow-hidden">
                 <Image
-                  src={user.image}
+                  src={user.customImage || user.image || ''}
                   alt={user.name}
                   width={128}
                   height={128}

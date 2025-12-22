@@ -340,9 +340,9 @@ export default function HomePage() {
                   onClick={(e) => e.stopPropagation()}
                   className="flex items-center gap-2 hover:opacity-80 transition-opacity"
                 >
-                  {post.authorId?.image ? (
+                  {(post.authorId?.customImage || post.authorId?.image) ? (
                     <Image
-                      src={post.authorId.image}
+                      src={post.authorId.customImage || post.authorId.image}
                       alt={post.authorId.name}
                       width={32}
                       height={32}

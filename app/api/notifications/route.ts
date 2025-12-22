@@ -24,7 +24,7 @@ export async function GET(request: Request) {
     }
 
     const notifications = await NotificationModel.find(query)
-      .populate('triggeredBy', 'name image')
+      .populate('triggeredBy', 'name image customImage')
       .populate('postId', 'title')
       .sort({ createdAt: -1 })
       .limit(50)

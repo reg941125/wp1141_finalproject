@@ -1,8 +1,6 @@
 # 家教網平台
 
-一個全端家教網平台，包含題目討論區、家教專區、題目與筆記專區、個人檔案系統。  
-vercel 部屬連結：https://wp1141-finalproject.vercel.app/  
-posthog 連結：https://us.posthog.com/shared/rS4f_31fGuaEheXdicw5e7uwyknDGA  
+一個全端家教網平台，包含題目討論區、家教專區、題目與筆記專區、個人檔案系統。
 
 ## 功能特色
 
@@ -27,7 +25,6 @@ posthog 連結：https://us.posthog.com/shared/rS4f_31fGuaEheXdicw5e7uwyknDGA
 - **LaTeX 渲染**: MathJax
 - **Markdown**: react-markdown
 - **PDF 匯出**: jsPDF
-- **分析工具**: PostHog (產品分析)
 - **部署**: Vercel
 
 ## 環境變數設定
@@ -60,11 +57,6 @@ SMTP_PORT=587
 SMTP_USER=your_email@gmail.com
 SMTP_PASSWORD=your_app_password
 SMTP_FROM=your_email@gmail.com
-
-# PostHog Analytics (optional)
-NEXT_PUBLIC_POSTHOG_KEY=your_posthog_project_api_key
-NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
-NEXT_PUBLIC_POSTHOG_SESSION_RECORDING=false
 ```
 
 ## 安裝與執行
@@ -100,63 +92,9 @@ npm start
 │   ├── (main)/            # 主要功能頁面
 │   └── api/               # API routes
 ├── components/            # React 元件
-│   ├── PostHogProvider.tsx    # PostHog Provider
-│   └── PostHogPageView.tsx    # PostHog 頁面追蹤
 ├── lib/                   # 工具函數和設定
 │   ├── models/           # Mongoose models
 │   ├── auth.ts           # NextAuth 設定
-│   ├── db.ts             # MongoDB 連線
-│   ├── posthog.ts        # PostHog 初始化
-│   └── posthog-events.ts # PostHog 事件追蹤工具
+│   └── db.ts             # MongoDB 連線
 └── types/                 # TypeScript 型別定義
-```
-
-## PostHog 使用
-
-PostHog 已整合到應用程式中，用於追蹤用戶行為和分析產品使用情況。
-
-### 基本功能
-
-- **自動頁面追蹤**: 所有頁面瀏覽會自動追蹤
-- **事件追蹤**: 可以使用工具函數追蹤自定義事件
-
-### 追蹤自定義事件
-
-```typescript
-import { trackEvent } from '@/lib/posthog-events';
-
-// 追蹤按鈕點擊
-trackEvent('button_clicked', {
-  button_name: 'submit',
-  page: 'login'
-});
-
-// 追蹤表單提交
-trackEvent('form_submitted', {
-  form_type: 'question',
-  has_content: true
-});
-```
-
-### 用戶識別
-
-當用戶登入時，可以識別用戶：
-
-```typescript
-import { identifyUser } from '@/lib/posthog-events';
-
-identifyUser(userId, {
-  email: user.email,
-  name: user.name
-});
-```
-
-### 用戶登出
-
-當用戶登出時，重置追蹤：
-
-```typescript
-import { resetUser } from '@/lib/posthog-events';
-
-resetUser();
 ```

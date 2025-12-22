@@ -6,7 +6,6 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Image from 'next/image';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
-import { getDownloadUrl, getPreviewUrl } from '@/lib/cloudinary-utils';
 
 interface QuestionFile {
   _id: string;
@@ -57,15 +56,7 @@ export default function ViewFilePage() {
 
   const handleDownload = () => {
     if (file?.fileUrl) {
-      // 使用 Cloudinary 的下載 URL（添加 fl_attachment 參數）
-      const downloadUrl = getDownloadUrl(file.fileUrl);
-      const a = document.createElement('a');
-      a.href = downloadUrl;
-      a.download = file.name;
-      a.target = '_blank';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      window.open(file.fileUrl, '_blank');
     } else if (file?.content) {
       const blob = new Blob([file.content], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
@@ -125,9 +116,9 @@ export default function ViewFilePage() {
                 {file.name}
               </h1>
               <div className="flex items-center gap-2 mb-4">
-                {file.authorId.image && (
+                {(file.authorId.customImage || file.authorId.image) && (
                   <Image
-                    src={file.authorId.image}
+                    src={file.authorId.customImage || file.authorId.image}
                     alt={file.authorId.name}
                     width={32}
                     height={32}
@@ -184,7 +175,7 @@ export default function ViewFilePage() {
             </button>
             {file.fileUrl && (
               <a
-                href={getPreviewUrl(file.fileUrl)}
+                href={file.fileUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
@@ -208,7 +199,7 @@ export default function ViewFilePage() {
           <div className="mb-6">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">內容</h2>
             <div className="prose dark:prose-invert max-w-none">
-              <MarkdownRenderer content={file.content} enableFileEmbed={true} />
+              <MarkdownRenderer content={file.content} />
             </div>
           </div>
         )}

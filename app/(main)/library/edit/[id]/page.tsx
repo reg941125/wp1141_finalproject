@@ -4,7 +4,6 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import MarkdownEditor from '@/components/MarkdownEditor';
-import { getPreviewUrl } from '@/lib/cloudinary-utils';
 
 interface QuestionFile {
   _id: string;
@@ -282,7 +281,7 @@ export default function EditFilePage() {
             {fileUploading && <p className="text-sm text-gray-500 mt-1">上傳中...</p>}
             {file.fileUrl && (
               <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
-                目前檔案: <a href={getPreviewUrl(file.fileUrl)} target="_blank" rel="noopener noreferrer" className="underline">查看</a>
+                目前檔案: <a href={file.fileUrl} target="_blank" rel="noopener noreferrer" className="underline">查看</a>
               </p>
             )}
           </div>

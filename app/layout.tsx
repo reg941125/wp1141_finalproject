@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import PostHogProviderWrapper from "@/components/PostHogProvider";
 
 export const metadata: Metadata = {
   title: "家教網平台",
@@ -34,9 +33,7 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <PostHogProviderWrapper>
-          <ThemeProvider>{children}</ThemeProvider>
-        </PostHogProviderWrapper>
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );

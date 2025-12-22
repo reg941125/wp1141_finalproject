@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     }
 
     const answers = await AnswerModel.find({ postId })
-      .populate('authorId', 'name image _id')
+      .populate('authorId', 'name image customImage _id')
       .sort({ createdAt: -1 })
       .lean();
 

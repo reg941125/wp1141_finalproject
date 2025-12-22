@@ -37,6 +37,7 @@ export async function POST(request: Request) {
       name,
       email,
       password: hashedPassword,
+      image: 'https://res.cloudinary.com/dga4lpnml/image/upload/v1734963000/default-avatar_rbpybo.png',
     });
 
     return NextResponse.json(

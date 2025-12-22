@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     if (tag) query.tags = tag;
     if (level) query.level = { $regex: level, $options: 'i' };
     const posts = await PostModel.find(query)
-      .populate('authorId', 'name image _id')
+      .populate('authorId', 'name image customImage _id')
       .sort({ createdAt: -1 })
       .limit(50)
       .lean();

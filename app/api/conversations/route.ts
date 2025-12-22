@@ -20,7 +20,7 @@ export async function GET() {
       participants: session.user.id,
       lastMessageAt: { $exists: true, $ne: null }, // 只顯示有消息的對話
     })
-      .populate('participants', 'name image username')
+      .populate('participants', 'name image customImage username')
       .populate('lastMessageBy', 'name image username')
       .sort({ lastMessageAt: -1, updatedAt: -1 });
 
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     const existingConversation = await ConversationModel.findOne({
       participants: { $all: participants, $size: 2 },
     })
-      .populate('participants', 'name image username');
+      .populate('participants', 'name image customImage username');
 
     if (existingConversation) {
       return NextResponse.json(existingConversation);

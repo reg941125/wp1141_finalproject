@@ -20,7 +20,7 @@ export async function GET(
 
     // 獲取對話，但不過濾 lastMessageAt
     const conversation = await ConversationModel.findById(params.id)
-      .populate('participants', 'name image username')
+      .populate('participants', 'name image customImage username')
       .populate('lastMessageBy', 'name image username');
 
     if (!conversation) {

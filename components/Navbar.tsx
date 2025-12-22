@@ -365,9 +365,9 @@ export default function Navbar() {
                                     }}
                                     className="hover:opacity-80 transition-opacity flex-shrink-0"
                                   >
-                                    {notification.triggeredBy.image ? (
+                                    {(notification.triggeredBy.customImage || notification.triggeredBy.image) ? (
                                       <Image
-                                        src={notification.triggeredBy.image}
+                                        src={notification.triggeredBy.customImage || notification.triggeredBy.image}
                                         alt={notification.triggeredBy.name}
                                         width={40}
                                         height={40}

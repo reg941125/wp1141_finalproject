@@ -414,9 +414,9 @@ export default function QuestionDetailPage() {
               href={`/profile/${post.authorId?._id}`}
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
-              {post.authorId?.image ? (
+              {(post.authorId?.customImage || post.authorId?.image) ? (
                 <Image
-                  src={post.authorId.image}
+                  src={post.authorId.customImage || post.authorId.image}
                   alt={post.authorId.name}
                   width={32}
                   height={32}
@@ -494,7 +494,7 @@ export default function QuestionDetailPage() {
           );
         })()}
         <div className="prose max-w-none">
-          <MarkdownRenderer content={post.content} enableFileEmbed={true} />
+          <MarkdownRenderer content={post.content} />
         </div>
       </div>
 
@@ -511,9 +511,9 @@ export default function QuestionDetailPage() {
                     href={`/profile/${answer.authorId?._id}`}
                     className="flex items-center gap-2 hover:opacity-80 transition-opacity"
                   >
-                    {answer.authorId?.image ? (
+                    {(answer.authorId?.customImage || answer.authorId?.image) ? (
                       <Image
-                        src={answer.authorId.image}
+                        src={answer.authorId.customImage || answer.authorId.image}
                         alt={answer.authorId.name}
                         width={32}
                         height={32}
@@ -536,7 +536,7 @@ export default function QuestionDetailPage() {
                   </span>
                 </div>
                 <div className="prose max-w-none mb-4">
-                  <MarkdownRenderer content={answer.content} enableFileEmbed={true} />
+                  <MarkdownRenderer content={answer.content} />
                 </div>
                 {answer.images.length > 0 && (
                   <div className="grid grid-cols-2 gap-4 mb-4">

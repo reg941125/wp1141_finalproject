@@ -12,7 +12,7 @@ export async function GET(
 ) {
   try {
     await dbConnect();
-    const posting = await JobPostingModel.findById(params.id).populate('authorId', 'name image _id').lean();
+    const posting = await JobPostingModel.findById(params.id).populate('authorId', 'name image customImage _id').lean();
 
     if (!posting) {
       return NextResponse.json({ error: 'Posting not found' }, { status: 404 });

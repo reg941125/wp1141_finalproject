@@ -47,7 +47,7 @@ export async function PUT(
     }
 
     await dbConnect();
-    const { bio, teachingExperience, username, image, bannerImage, educationLevel } = await request.json();
+    const { bio, teachingExperience, username, image, customImage, bannerImage, educationLevel } = await request.json();
 
     // Check username uniqueness if provided
     if (username) {
@@ -77,6 +77,7 @@ export async function PUT(
     if (teachingExperience !== undefined) updateData.teachingExperience = teachingExperience;
     if (username !== undefined) updateData.username = username.toLowerCase();
     if (image !== undefined) updateData.image = image;
+    if (customImage !== undefined) updateData.customImage = customImage;
     if (bannerImage !== undefined) updateData.bannerImage = bannerImage;
     if (educationLevel !== undefined) updateData.educationLevel = educationLevel || null;
 

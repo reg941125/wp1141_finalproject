@@ -12,7 +12,7 @@ export async function GET(
 ) {
   try {
     await dbConnect();
-    const post = await PostModel.findById(params.id).populate('authorId', 'name image _id').lean();
+    const post = await PostModel.findById(params.id).populate('authorId', 'name image customImage _id').lean();
 
     if (!post) {
       return NextResponse.json({ error: 'Post not found' }, { status: 404 });
@@ -75,7 +75,7 @@ export async function PUT(
     await post.save();
     
     // 重新查询确保获取最新数据，並統計按讚數量
-    const updatedPost = await PostModel.findById(params.id).populate('authorId', 'name image _id').lean();
+    const updatedPost = await PostModel.findById(params.id).populate('authorId', 'name image customImage _id').lean();
     
     const likeCount = await LikeModel.countDocuments({
       targetId: params.id,

@@ -359,9 +359,9 @@ export default function SeekingStudentsPage() {
                     onClick={(e) => e.stopPropagation()}
                     className="flex items-center space-x-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                   >
-                    {posting.authorId?.image ? (
+                    {(posting.authorId?.customImage || posting.authorId?.image) ? (
                       <Image
-                        src={posting.authorId.image}
+                        src={posting.authorId.customImage || posting.authorId.image}
                         alt={posting.authorId.name}
                         width={24}
                         height={24}

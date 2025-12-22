@@ -34,7 +34,7 @@ export async function GET(request: Request) {
     }
 
     const postings = await JobPostingModel.find(query)
-      .populate('authorId', 'name image _id')
+      .populate('authorId', 'name image customImage _id')
       .sort({ createdAt: -1 })
       .limit(100)
       .lean();

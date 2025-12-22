@@ -12,6 +12,7 @@ interface Conversation {
     _id: string;
     name: string;
     image?: string;
+    customImage?: string;
     username?: string;
   }>;
   lastMessage?: string;
@@ -272,10 +273,10 @@ export default function ChatPage() {
                       onClick={(e) => e.stopPropagation()}
                       className="flex-shrink-0 hover:opacity-80 transition-opacity"
                     >
-                      {otherUser.image ? (
+                      {(otherUser.customImage || otherUser.image) ? (
                         <div className="relative w-12 h-12 rounded-full overflow-hidden bg-gray-300 dark:bg-gray-600">
                           <Image
-                            src={otherUser.image}
+                            src={otherUser.customImage || otherUser.image}
                             alt={otherUser.name}
                             width={48}
                             height={48}
@@ -358,10 +359,10 @@ export default function ChatPage() {
                 href={`/profile/${otherUser._id}`}
                 className="flex-shrink-0 hover:opacity-80 transition-opacity"
               >
-                {otherUser.image ? (
+                {(otherUser.customImage || otherUser.image) ? (
                   <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-300 dark:bg-gray-600">
                     <Image
-                      src={otherUser.image}
+                      src={otherUser.customImage || otherUser.image}
                       alt={otherUser.name}
                       width={40}
                       height={40}

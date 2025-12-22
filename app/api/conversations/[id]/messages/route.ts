@@ -31,7 +31,7 @@ export async function GET(
     const messages = await MessageModel.find({
       conversationId: params.id,
     })
-      .populate('senderId', 'name image username')
+      .populate('senderId', 'name image customImage username')
       .sort({ createdAt: 1 });
 
     // Mark messages as read
