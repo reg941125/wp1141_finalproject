@@ -1,44 +1,12 @@
-'use client';
+// Force dynamic rendering for all main pages
+export const dynamic = 'force-dynamic';
 
-import { SessionProvider } from 'next-auth/react';
-import { usePathname } from 'next/navigation';
-import Navbar from '@/components/Navbar';
-import PostHogPageView from '@/components/PostHogPageView';
-
-function MainContent({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const isProfilePage = pathname?.startsWith('/profile');
-  const isChatPage = pathname?.startsWith('/chat');
-  
-  return (
-    <main className={`min-h-screen transition-colors ${isProfilePage ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-950'} ${isChatPage ? 'h-screen overflow-hidden' : ''}`}>
-      {children}
-    </main>
-  );
-}
+import LayoutWrapper from './layout-wrapper';
 
 export default function MainLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <SessionProvider>
-      <LayoutContent>{children}</LayoutContent>
-    </SessionProvider>
-  );
+  return <LayoutWrapper>{children}</LayoutWrapper>;
 }
-
-function LayoutContent({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const isChatPage = pathname?.startsWith('/chat');
-  
-  return (
-    <>
-      <PostHogPageView />
-      {!isChatPage && <Navbar />}
-      <MainContent>{children}</MainContent>
-    </>
-  );
-}
-
