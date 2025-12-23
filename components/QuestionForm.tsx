@@ -191,7 +191,7 @@ export default function QuestionForm({
               value={tags}
               onChange={(e) => setTags(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-l-md rounded-r-md sm:rounded-l-none focus:outline focus:outline-2 focus:outline-blue-500 dark:focus:outline-blue-400 focus:outline-offset-[-2px] focus:ring-0 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 transition-colors"
-              placeholder="其他（用頓號或逗號分隔），例如：文言文、文法、三角函數......"
+              placeholder="標籤（用頓號或逗號分隔），例如：國文、數學、演算法、經濟學......"
             />
           </div>
         </div>

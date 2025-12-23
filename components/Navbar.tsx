@@ -870,7 +870,7 @@ export default function Navbar() {
                         />
                       )}
                       <span className="text-white text-sm font-bold absolute">
-                        {session.user?.name?.charAt(0).toUpperCase() || 'U'}
+                        {session.user?.image ? '' : session.user.name?.charAt(0).toUpperCase() || 'U'}
                       </span>
                     </div>
                   </button>
