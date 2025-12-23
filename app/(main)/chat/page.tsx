@@ -51,6 +51,7 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [unreadMap, setUnreadMap] = useState<Record<string, number>>({});
+  const [searchQuery, setSearchQuery] = useState('');
   
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -212,6 +213,21 @@ export default function ChatPage() {
     );
   };
 
+  // 过滤对话列表
+  const filteredConversations = conversations.filter((conversation) => {
+    if (!searchQuery.trim()) return true;
+    
+    const otherUser = getOtherParticipant(conversation);
+    if (!otherUser) return false;
+    
+    const query = searchQuery.toLowerCase();
+    return (
+      otherUser.name.toLowerCase().includes(query) ||
+      otherUser.username?.toLowerCase().includes(query) ||
+      conversation.lastMessage?.toLowerCase().includes(query)
+    );
+  });
+
   if (status === 'loading' || status === 'unauthenticated') {
     return (
       <div className="h-screen flex items-center justify-center">
@@ -229,29 +245,66 @@ export default function ChatPage() {
       {/* Left Sidebar - Conversation List */}
       <div className={`w-full md:w-96 border-r border-gray-200 dark:border-gray-700 flex flex-col bg-white dark:bg-gray-800 ${conversationId ? 'hidden md:flex' : ''}`}>
         {/* Header */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center space-x-3">
-          <button
-            onClick={() => router.push('/')}
-            className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-            title="返回首頁"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center space-x-3 mb-3">
+            <button
+              onClick={() => router.push('/')}
+              className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+              title="返回首頁"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">訊息</h1>
+          </div>
+          
+          {/* 搜索框 */}
+          <div className="relative">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="搜尋聊天室..."
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 text-sm"
+            />
+            <svg
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
-          </button>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">訊息</h1>
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                title="清除搜索"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Conversation List */}
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="p-4 text-center text-gray-500 dark:text-gray-400">載入中...</div>
-          ) : conversations.length === 0 ? (
+          ) : filteredConversations.length === 0 ? (
             <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-              尚無對話記錄
+              {searchQuery ? '沒有找到相符的聊天室' : '尚無對話記錄'}
             </div>
           ) : (
-            conversations.map((conversation) => {
+            filteredConversations.map((conversation) => {
               const otherUser = getOtherParticipant(conversation);
               if (!otherUser) return null;
 
