@@ -36,10 +36,16 @@ export default function Navbar() {
   const [isGuestMenuOpen, setIsGuestMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isTutoringMenuOpen, setIsTutoringMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any>(null);
+  const [isSearching, setIsSearching] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const guestMenuRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
   const tutoringMenuRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const handleSignOut = async () => {
     // 立即清除未讀數量，避免顯示舊數據
@@ -154,16 +160,23 @@ export default function Navbar() {
           setIsTutoringMenuOpen(false);
         }
       }
+
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        // 檢查是否點擊了搜索按鈕
+        if (!target.closest('[data-search-button]')) {
+          setIsSearchOpen(false);
+        }
+      }
     };
 
-    if (isDropdownOpen || isGuestMenuOpen || isNotificationOpen || isTutoringMenuOpen) {
+    if (isDropdownOpen || isGuestMenuOpen || isNotificationOpen || isTutoringMenuOpen || isSearchOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isDropdownOpen, isGuestMenuOpen, isNotificationOpen, isTutoringMenuOpen]);
+  }, [isDropdownOpen, isGuestMenuOpen, isNotificationOpen, isTutoringMenuOpen, isSearchOpen]);
 
   // 標記通知為已讀
   const markAsRead = async (notificationId: string) => {
@@ -195,9 +208,241 @@ export default function Navbar() {
     }
   };
 
+  // 搜索功能
+  const handleSearch = async (query: string) => {
+    setSearchQuery(query);
+    
+    if (!query.trim()) {
+      setSearchResults(null);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data);
+      }
+    } catch (error) {
+      console.error('Error searching:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // 當打開搜索時，focus 到輸入框
+  useEffect(() => {
+    if (isSearchOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isSearchOpen]);
+
   return (
-    <nav className="bg-white dark:bg-gray-900 shadow-lg transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <>
+      {/* 移動版搜索覆蓋層 */}
+      {isSearchOpen && (
+        <div className="sm:hidden fixed inset-0 z-50 bg-white dark:bg-gray-900">
+          <div className="flex flex-col h-full">
+            {/* 搜索頭部 */}
+            <div className="flex items-center gap-2 p-4 border-b border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => {
+                  setIsSearchOpen(false);
+                  setSearchQuery('');
+                  setSearchResults(null);
+                }}
+                className="p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                aria-label="返回"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+                placeholder="搜索題目、家教、筆記或用戶..."
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+              />
+            </div>
+
+            {/* 搜索結果 */}
+            <div className="flex-1 overflow-y-auto">
+              {isSearching && (
+                <div className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                  搜索中...
+                </div>
+              )}
+
+              {!isSearching && searchResults && (
+                <>
+                  {/* 題目討論區結果 */}
+                  {searchResults.posts?.length > 0 && (
+                    <div>
+                      <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800 text-xs font-semibold text-gray-600 dark:text-gray-400">
+                        題目討論區
+                      </div>
+                      {searchResults.posts.map((post: any) => (
+                        <Link
+                          key={post._id}
+                          href={`/questions/${post._id}`}
+                          onClick={() => {
+                            setIsSearchOpen(false);
+                            setSearchQuery('');
+                            setSearchResults(null);
+                          }}
+                          className="block px-4 py-3 border-b border-gray-200 dark:border-gray-700"
+                        >
+                          <div className="font-medium text-gray-900 dark:text-white line-clamp-1">
+                            {post.title}
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">
+                            {post.content}
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 家教專區結果 */}
+                  {searchResults.jobs?.length > 0 && (
+                    <div>
+                      <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800 text-xs font-semibold text-gray-600 dark:text-gray-400">
+                        家教專區
+                      </div>
+                      {searchResults.jobs.map((job: any) => (
+                        <Link
+                          key={job._id}
+                          href={`/tutoring/${job._id}`}
+                          onClick={() => {
+                            setIsSearchOpen(false);
+                            setSearchQuery('');
+                            setSearchResults(null);
+                          }}
+                          className="block px-4 py-3 border-b border-gray-200 dark:border-gray-700"
+                        >
+                          <div className="font-medium text-gray-900 dark:text-white line-clamp-1">
+                            {job.title}
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">
+                            {job.description}
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 題目與筆記結果 */}
+                  {searchResults.files?.length > 0 && (
+                    <div>
+                      <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800 text-xs font-semibold text-gray-600 dark:text-gray-400">
+                        題目與筆記
+                      </div>
+                      {searchResults.files.map((file: any) => (
+                        <Link
+                          key={file._id}
+                          href={`/library/view/${file._id}`}
+                          onClick={() => {
+                            setIsSearchOpen(false);
+                            setSearchQuery('');
+                            setSearchResults(null);
+                          }}
+                          className="block px-4 py-3 border-b border-gray-200 dark:border-gray-700"
+                        >
+                          <div className="font-medium text-gray-900 dark:text-white line-clamp-1">
+                            {file.name}
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">
+                            {file.description}
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 用戶結果 */}
+                  {searchResults.users?.length > 0 && (
+                    <div>
+                      <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800 text-xs font-semibold text-gray-600 dark:text-gray-400">
+                        用戶
+                      </div>
+                      {searchResults.users.map((user: any) => (
+                        <Link
+                          key={user._id}
+                          href={`/profile/${user._id}`}
+                          onClick={() => {
+                            setIsSearchOpen(false);
+                            setSearchQuery('');
+                            setSearchResults(null);
+                          }}
+                          className="flex items-center px-4 py-3 border-b border-gray-200 dark:border-gray-700"
+                        >
+                          <div className="relative w-12 h-12 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0">
+                            {(user.customImage || user.image) ? (
+                              <Image
+                                src={(user.customImage || user.image) as string}
+                                alt={user.name}
+                                fill
+                                className="object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-500 dark:text-gray-400 font-semibold text-lg">
+                                {user.name?.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                          </div>
+                          <div className="ml-3 flex-1 min-w-0">
+                            <div className="font-medium text-gray-900 dark:text-white truncate">
+                              {user.name}
+                            </div>
+                            {user.username && (
+                              <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                                @{user.username}
+                              </div>
+                            )}
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 無結果 */}
+                  {searchResults.posts?.length === 0 &&
+                    searchResults.jobs?.length === 0 &&
+                    searchResults.files?.length === 0 &&
+                    searchResults.users?.length === 0 && (
+                      <div className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                        沒有找到相關結果
+                      </div>
+                    )}
+                </>
+              )}
+
+              {!isSearching && !searchResults && searchQuery.trim() === '' && (
+                <div className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                  輸入關鍵字開始搜索
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <nav className="bg-white dark:bg-gray-900 shadow-lg transition-colors">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
@@ -278,7 +523,182 @@ export default function Navbar() {
           </div>
           <div className="flex items-center">
             {session ? (
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                {/* 搜索圖標 */}
+                <div className="relative" ref={searchRef}>
+                  <button
+                    data-search-button
+                    onClick={() => setIsSearchOpen(!isSearchOpen)}
+                    className="relative p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    aria-label="搜索"
+                  >
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                  </button>
+
+                  {/* 搜索面板 - 桌面版 */}
+                  {isSearchOpen && (
+                    <div className="hidden sm:block absolute right-0 mt-2 w-96 bg-white dark:bg-gray-800 rounded-lg shadow-xl dark:shadow-gray-900/50 z-50 border border-gray-200 dark:border-gray-700 max-h-[80vh] overflow-hidden">
+                      <div className="p-4">
+                        <input
+                          ref={searchInputRef}
+                          type="text"
+                          value={searchQuery}
+                          onChange={(e) => handleSearch(e.target.value)}
+                          placeholder="搜索題目、家教、筆記或用戶..."
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+                        />
+                      </div>
+
+                      {isSearching && (
+                        <div className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                          搜索中...
+                        </div>
+                      )}
+
+                      {!isSearching && searchResults && (
+                        <div className="max-h-[60vh] overflow-y-auto">
+                          {/* 題目討論區結果 */}
+                          {searchResults.posts?.length > 0 && (
+                            <div className="border-t border-gray-200 dark:border-gray-700">
+                              <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700/50 text-xs font-semibold text-gray-600 dark:text-gray-400">
+                                題目討論區
+                              </div>
+                              {searchResults.posts.map((post: any) => (
+                                <Link
+                                  key={post._id}
+                                  href={`/questions/${post._id}`}
+                                  onClick={() => setIsSearchOpen(false)}
+                                  className="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                                >
+                                  <div className="font-medium text-gray-900 dark:text-white line-clamp-1">
+                                    {post.title}
+                                  </div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 line-clamp-1 mt-1">
+                                    {post.content}
+                                  </div>
+                                </Link>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* 家教專區結果 */}
+                          {searchResults.jobs?.length > 0 && (
+                            <div className="border-t border-gray-200 dark:border-gray-700">
+                              <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700/50 text-xs font-semibold text-gray-600 dark:text-gray-400">
+                                家教專區
+                              </div>
+                              {searchResults.jobs.map((job: any) => (
+                                <Link
+                                  key={job._id}
+                                  href={`/tutoring/${job._id}`}
+                                  onClick={() => setIsSearchOpen(false)}
+                                  className="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                                >
+                                  <div className="font-medium text-gray-900 dark:text-white line-clamp-1">
+                                    {job.title}
+                                  </div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 line-clamp-1 mt-1">
+                                    {job.description}
+                                  </div>
+                                </Link>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* 題目與筆記結果 */}
+                          {searchResults.files?.length > 0 && (
+                            <div className="border-t border-gray-200 dark:border-gray-700">
+                              <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700/50 text-xs font-semibold text-gray-600 dark:text-gray-400">
+                                題目與筆記
+                              </div>
+                              {searchResults.files.map((file: any) => (
+                                <Link
+                                  key={file._id}
+                                  href={`/library/view/${file._id}`}
+                                  onClick={() => setIsSearchOpen(false)}
+                                  className="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                                >
+                                  <div className="font-medium text-gray-900 dark:text-white line-clamp-1">
+                                    {file.name}
+                                  </div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 line-clamp-1 mt-1">
+                                    {file.description}
+                                  </div>
+                                </Link>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* 用戶結果 */}
+                          {searchResults.users?.length > 0 && (
+                            <div className="border-t border-gray-200 dark:border-gray-700">
+                              <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700/50 text-xs font-semibold text-gray-600 dark:text-gray-400">
+                                用戶
+                              </div>
+                              {searchResults.users.map((user: any) => (
+                                <Link
+                                  key={user._id}
+                                  href={`/profile/${user._id}`}
+                                  onClick={() => setIsSearchOpen(false)}
+                                  className="flex items-center px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                                >
+                                  <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0">
+                                    {(user.customImage || user.image) ? (
+                                      <Image
+                                        src={(user.customImage || user.image) as string}
+                                        alt={user.name}
+                                        fill
+                                        className="object-cover"
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center text-gray-500 dark:text-gray-400 font-semibold">
+                                        {user.name?.charAt(0).toUpperCase()}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="ml-3 flex-1 min-w-0">
+                                    <div className="font-medium text-gray-900 dark:text-white truncate">
+                                      {user.name}
+                                    </div>
+                                    {user.username && (
+                                      <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                                        @{user.username}
+                                      </div>
+                                    )}
+                                  </div>
+                                </Link>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* 無結果 */}
+                          {searchResults.posts?.length === 0 &&
+                            searchResults.jobs?.length === 0 &&
+                            searchResults.files?.length === 0 &&
+                            searchResults.users?.length === 0 && (
+                              <div className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                                沒有找到相關結果
+                              </div>
+                            )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 {/* 通知鈴鐺 */}
                 <div className="relative" ref={notificationRef}>
                   <button
@@ -711,6 +1131,7 @@ export default function Navbar() {
         </div>
       </div>
     </nav>
+    </>
   );
 }
 
