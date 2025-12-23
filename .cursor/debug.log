@@ -1,0 +1,3 @@
+{"location":"app/api/auth/verify-email/route.ts:11","message":"Verify email request received","data":{"hasToken":true,"tokenLength":64},"timestamp":1766486584273,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"app/api/auth/verify-email/route.ts:28","message":"User found with token","data":{"userFound":false},"timestamp":1766486584339,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"app/api/auth/verify-email/route.ts:36","message":"Checking expired token user","data":{"userFound":false,"hasToken":false},"timestamp":1766486584363,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}

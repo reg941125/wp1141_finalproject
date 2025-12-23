@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import UserModel from '@/lib/models/User';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import { sendVerificationEmail } from '@/lib/email';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
@@ -33,15 +37,35 @@ export async function POST(request: Request) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // 生成驗證 token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationExpires = new Date();
+    verificationExpires.setHours(verificationExpires.getHours() + 24); // 24 小時後過期
+
     const user = await UserModel.create({
       name,
       email,
       password: hashedPassword,
       image: 'https://res.cloudinary.com/dga4lpnml/image/upload/v1734963000/default-avatar_rbpybo.png',
+      emailVerified: false,
+      emailVerificationToken: verificationToken,
+      emailVerificationExpires: verificationExpires,
     });
 
+    // 發送驗證郵件
+    const emailSent = await sendVerificationEmail(email, verificationToken, name);
+    
+    if (!emailSent) {
+      console.error('驗證郵件發送失敗，但用戶已創建');
+      // 即使郵件發送失敗，也返回成功，但提示用戶檢查郵件設定
+    }
+
     return NextResponse.json(
-      { message: '註冊成功', userId: user._id },
+      { 
+        message: '註冊成功！請檢查您的電子郵件以驗證帳號。', 
+        userId: user._id,
+        emailSent 
+      },
       { status: 201 }
     );
   } catch (error) {

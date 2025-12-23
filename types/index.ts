@@ -14,6 +14,9 @@ export interface User {
   educationLevel?: 'elementary' | 'middle' | 'high' | 'university' | 'graduate' | 'other';
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
+  emailVerified?: boolean;
+  emailVerificationToken?: string;
+  emailVerificationExpires?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
