@@ -46,7 +46,19 @@ SMTP_PORT=587
 SMTP_USER=your_email@gmail.com
 SMTP_PASSWORD=your_app_password
 SMTP_FROM=your_email@gmail.com
+
+# Admin Password (for admin panel)
+ADMIN_PASSWORD=your_admin_password
 ```
+
+**注意**: 如果未設定 `ADMIN_PASSWORD`，預設密碼為 `admin123456`。建議在生產環境中設定一個強密碼。
+
+**管理員密碼建議**: 使用以下命令生成一個安全的隨機密碼：
+```bash
+node -e "console.log(require('crypto').randomBytes(16).toString('hex'))"
+```
+
+例如，生成的密碼可能是：`c0a6831930d3f2d26cf124a919ac636d`
 
 ## 前置需求
 
@@ -426,6 +438,28 @@ npm run lint
 
 - `\in{equation}` - 行內數學式
 - `\block{equation}` - 區塊數學式
+
+## 管理員後台
+
+專案包含一個管理員後台系統，可以管理用戶和發布公告。
+
+### 訪問管理員後台
+
+1. 訪問 `/admin/login` 頁面
+2. 輸入管理員密碼（預設為 `admin123456` 或環境變數 `ADMIN_PASSWORD` 設定的值）
+3. 登入後即可訪問管理後台
+
+### 管理員功能
+
+- **用戶管理**：查看所有用戶列表，可以刪除用戶帳號
+- **公告管理**：發布、查看和刪除系統公告
+- 公告會自動顯示在首頁頂部，所有用戶都可以看到
+
+### 安全建議
+
+- 在生產環境中，務必設定一個強密碼作為 `ADMIN_PASSWORD` 環境變數
+- 建議定期更換管理員密碼
+- 管理員後台使用 cookie-based 認證，登出後會清除 session
 
 ## 部署
 

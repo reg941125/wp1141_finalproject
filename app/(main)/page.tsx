@@ -31,9 +31,17 @@ interface Post {
   likes: number;
 }
 
+interface Announcement {
+  _id: string;
+  title: string;
+  content: string;
+  createdAt: string;
+}
+
 export default function HomePage() {
   const { data: session } = useSession();
   const [allPosts, setAllPosts] = useState<Post[]>([]); // 存儲所有貼文
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
@@ -93,7 +101,20 @@ export default function HomePage() {
 
   useEffect(() => {
     fetchPosts();
+    fetchAnnouncements();
   }, [fetchPosts]);
+
+  const fetchAnnouncements = async () => {
+    try {
+      const response = await fetch('/api/admin/announcements');
+      const data = await response.json();
+      if (response.ok) {
+        setAnnouncements(data.announcements || []);
+      }
+    } catch (error) {
+      console.error('Error fetching announcements:', error);
+    }
+  };
 
   // 只在 userId 真正改變時（登入/登出）才重新獲取
   useEffect(() => {
@@ -230,6 +251,25 @@ export default function HomePage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* 公告區域 */}
+      {announcements.length > 0 && (
+        <div className="mb-6 space-y-3">
+          {announcements.map((announcement) => (
+            <div
+              key={announcement._id}
+              className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4"
+            >
+              <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                📢 {announcement.title}
+              </h3>
+              <p className="text-sm text-blue-800 dark:text-blue-200 whitespace-pre-wrap">
+                {announcement.content}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">題目討論區</h1>
         {session && (

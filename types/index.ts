@@ -103,3 +103,11 @@ export interface Message {
   updatedAt: Date;
 }
 
+export interface Announcement {
+  _id: Types.ObjectId;
+  title: string;
+  content: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
