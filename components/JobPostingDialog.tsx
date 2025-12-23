@@ -72,8 +72,13 @@ export default function JobPostingDialog({
     const min = parseInt(hourlyRateMin);
     const max = isRange && hourlyRateMax ? parseInt(hourlyRateMax) : undefined;
 
-    if (isNaN(min) || min < 0) {
-      alert('請輸入有效的時薪');
+    if (isNaN(min) || min <= 0) {
+      alert('請輸入有效的時薪（必須為正數）');
+      return;
+    }
+
+    if (isRange && max && (isNaN(max) || max <= 0)) {
+      alert('請輸入有效的最高時薪（必須為正數）');
       return;
     }
 
@@ -83,7 +88,7 @@ export default function JobPostingDialog({
     }
 
     if (formData.targetEducationLevels.length === 0) {
-      alert('請至少選擇一個目標教育程度');
+      alert('請至少選擇一個學生程度');
       return;
     }
 
@@ -172,9 +177,9 @@ export default function JobPostingDialog({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                目標教育程度（可多選）
+                學生程度（可複選）
               </label>
-              <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
                 {[
                   { value: 'elementary', label: '國小' },
                   { value: 'middle', label: '國中' },
@@ -227,22 +232,96 @@ export default function JobPostingDialog({
                 </label>
               </div>
               <div className="flex items-center space-x-4 mt-2">
-                <input
-                  type="number"
-                  value={hourlyRateMin}
-                  onChange={(e) => setHourlyRateMin(e.target.value)}
-                  placeholder="最低時薪"
-                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors"
-                  required
-                />
-                {isRange && (
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const current = parseInt(hourlyRateMin) || 0;
+                      const newValue = Math.max(1, current - 50);
+                      setHourlyRateMin(newValue.toString());
+                    }}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
+                  >
+                    -50
+                  </button>
                   <input
                     type="number"
-                    value={hourlyRateMax}
-                    onChange={(e) => setHourlyRateMax(e.target.value)}
-                    placeholder="最高時薪"
-                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors"
+                    value={hourlyRateMin}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === '' || (parseInt(value) > 0)) {
+                        setHourlyRateMin(value);
+                      }
+                    }}
+                    onBlur={(e) => {
+                      const value = parseInt(e.target.value);
+                      if (isNaN(value) || value <= 0) {
+                        setHourlyRateMin('1');
+                      }
+                    }}
+                    placeholder="最低時薪"
+                    min="1"
+                    step="50"
+                    className="w-32 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors no-spinner"
+                    required
                   />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const current = parseInt(hourlyRateMin) || 0;
+                      const newValue = current + 50;
+                      setHourlyRateMin(newValue.toString());
+                    }}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
+                  >
+                    +50
+                  </button>
+                </div>
+                {isRange && (
+                  <div className="flex items-center space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const current = parseInt(hourlyRateMax) || 0;
+                        const newValue = Math.max(1, current - 50);
+                        setHourlyRateMax(newValue.toString());
+                      }}
+                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
+                    >
+                      -50
+                    </button>
+                    <input
+                      type="number"
+                      value={hourlyRateMax}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '' || (parseInt(value) > 0)) {
+                          setHourlyRateMax(value);
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const value = parseInt(e.target.value);
+                        if (isNaN(value) || value <= 0) {
+                          setHourlyRateMax('1');
+                        }
+                      }}
+                      placeholder="最高時薪"
+                      min="1"
+                      step="50"
+                      className="w-32 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors no-spinner"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const current = parseInt(hourlyRateMax) || 0;
+                        const newValue = current + 50;
+                        setHourlyRateMax(newValue.toString());
+                      }}
+                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
+                    >
+                      +50
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
