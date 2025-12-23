@@ -126,12 +126,20 @@ export default function LibraryPage() {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             題目與筆記專區
           </h1>
-          <button
-            onClick={() => setShowUploadDialog(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-          >
-            上傳題目/筆記
-          </button>
+          <div className="flex gap-2">
+            <Link
+              href="/library/drafts"
+              className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+            >
+              我的草稿
+            </Link>
+            <button
+              onClick={() => setShowUploadDialog(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              上傳題目/筆記
+            </button>
+          </div>
         </div>
 
         {/* 搜尋和篩選 */}
@@ -345,6 +353,54 @@ function UploadDialog({ onClose }: { onClose: () => void }) {
   const [content, setContent] = useState('');
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [drafts, setDrafts] = useState<any[]>([]);
+  const [loadingDrafts, setLoadingDrafts] = useState(false);
+  const [showDraftList, setShowDraftList] = useState(false);
+
+  // 獲取所有草稿
+  useEffect(() => {
+    const fetchDrafts = async () => {
+      try {
+        const response = await fetch('/api/questions/draft');
+        if (response.ok) {
+          const data = await response.json();
+          setDrafts(data.drafts || []);
+        }
+      } catch (error) {
+        console.error('Error fetching drafts:', error);
+      }
+    };
+    fetchDrafts();
+  }, []);
+
+  // 還原草稿
+  const handleRestoreDraft = async (draftId: string) => {
+    setLoadingDrafts(true);
+    try {
+      const response = await fetch(`/api/questions/draft?id=${draftId}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.draft) {
+          setName(data.draft.name || '');
+          setDescription(data.draft.description || '');
+          setSubject(data.draft.subject || '其他');
+          setDifficulty(data.draft.difficulty || '中等');
+          setTags(data.draft.tags?.join(', ') || '');
+          setContent(data.draft.content || '');
+          setIsPublic(data.draft.isPublic !== undefined ? data.draft.isPublic : true);
+          setShowOnProfile(data.draft.showOnProfile || false);
+          setShowDraftList(false);
+          // 注意：fileUrl 無法直接還原，需要用戶重新上傳
+        }
+      }
+    } catch (error) {
+      console.error('Error restoring draft:', error);
+      alert('還原草稿失敗');
+    } finally {
+      setLoadingDrafts(false);
+    }
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -375,7 +431,64 @@ function UploadDialog({ onClose }: { onClose: () => void }) {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSaveDraft = async () => {
+    if (!name || !description) {
+      alert('請填寫名稱和描述');
+      return;
+    }
+
+    setSavingDraft(true);
+    try {
+      let fileUrl = '';
+
+      // 如果有選擇檔案，先上傳
+      if (file) {
+        const formData = new FormData();
+        formData.append('files', file);
+
+        const uploadResponse = await fetch('/api/questions/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (uploadResponse.ok) {
+          const uploadData = await uploadResponse.json();
+          if (uploadData.urls && uploadData.urls.length > 0) {
+            fileUrl = uploadData.urls[0];
+          }
+        }
+      }
+
+      // 保存為草稿
+      const draftResponse = await fetch('/api/questions/draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          description,
+          fileUrl,
+          content,
+          subject,
+          difficulty,
+          tags: tags.split(',').map((t) => t.trim()).filter((t) => t),
+          isPublic,
+          showOnProfile,
+        }),
+      });
+
+      if (draftResponse.ok) {
+        alert('已保存為草稿');
+        onClose();
+      }
+    } catch (error) {
+      console.error('Error saving draft:', error);
+      alert('保存草稿失敗');
+    } finally {
+      setSavingDraft(false);
+    }
+  };
+
+  const handlePublish = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !description) return;
 
@@ -401,7 +514,7 @@ function UploadDialog({ onClose }: { onClose: () => void }) {
         }
       }
 
-      // 創建題目/筆記
+      // 創建題目/筆記（發布）
       const response = await fetch('/api/questions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -415,6 +528,7 @@ function UploadDialog({ onClose }: { onClose: () => void }) {
           tags: tags.split(',').map((t) => t.trim()).filter((t) => t),
           isPublic,
           showOnProfile,
+          isDraft: false,
         }),
       });
 
@@ -423,6 +537,7 @@ function UploadDialog({ onClose }: { onClose: () => void }) {
       }
     } catch (error) {
       console.error('Error creating file:', error);
+      alert('發布失敗');
     } finally {
       setSubmitting(false);
     }
@@ -444,7 +559,51 @@ function UploadDialog({ onClose }: { onClose: () => void }) {
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {drafts.length > 0 && (
+            <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-yellow-800 dark:text-yellow-200">
+                  您有 {drafts.length} 個未完成的草稿
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowDraftList(!showDraftList)}
+                  className="px-3 py-1 text-sm bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors"
+                >
+                  {showDraftList ? '隱藏' : '查看草稿'}
+                </button>
+              </div>
+              {showDraftList && (
+                <div className="mt-3 space-y-2 max-h-60 overflow-y-auto">
+                  {drafts.map((draft) => (
+                    <div
+                      key={draft._id}
+                      className="flex items-center justify-between p-2 bg-white dark:bg-gray-700 rounded-md"
+                    >
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                          {draft.name || '未命名草稿'}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          更新於 {new Date(draft.updatedAt).toLocaleString('zh-TW')}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRestoreDraft(draft._id)}
+                        disabled={loadingDrafts}
+                        className="ml-2 px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                      >
+                        還原
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <form onSubmit={handlePublish} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 名稱 *
@@ -545,7 +704,7 @@ function UploadDialog({ onClose }: { onClose: () => void }) {
               </div>
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex gap-4 flex-wrap">
               <label className="flex items-center">
                 <input
                   type="checkbox"
@@ -575,11 +734,19 @@ function UploadDialog({ onClose }: { onClose: () => void }) {
                 取消
               </button>
               <button
+                type="button"
+                onClick={handleSaveDraft}
+                disabled={savingDraft}
+                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:opacity-50 transition-colors"
+              >
+                {savingDraft ? '儲存中...' : '儲存成草稿'}
+              </button>
+              <button
                 type="submit"
                 disabled={submitting}
                 className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
               >
-                {submitting ? '上傳中...' : '上傳'}
+                {submitting ? '發布中...' : '發布'}
               </button>
             </div>
           </form>

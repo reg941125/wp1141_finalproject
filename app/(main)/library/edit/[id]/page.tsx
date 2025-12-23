@@ -42,21 +42,31 @@ export default function EditFilePage() {
   const [isPublic, setIsPublic] = useState(true);
   const [showOnProfile, setShowOnProfile] = useState(false);
   const [fileUploading, setFileUploading] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [isDraft, setIsDraft] = useState(false);
 
   const fetchFile = useCallback(async () => {
     try {
-      const response = await fetch(`/api/questions/${params.id}`);
+      // 先嘗試從一般 API 獲取，如果是草稿則從草稿 API 獲取
+      let response = await fetch(`/api/questions/${params.id}`);
+      if (!response.ok) {
+        // 如果不是一般筆記，嘗試從草稿 API 獲取
+        response = await fetch(`/api/questions/draft?id=${params.id}`);
+      }
+      
       if (response.ok) {
         const data = await response.json();
-        setFile(data);
-        setName(data.name);
-        setDescription(data.description);
-        setSubject(data.subject || '其他');
-        setDifficulty(data.difficulty || '中等');
-        setTags(data.tags?.join(', ') || '');
-        setContent(data.content || '');
-        setIsPublic(data.isPublic !== undefined ? data.isPublic : true);
-        setShowOnProfile(data.showOnProfile || false);
+        const fileData = data.draft || data; // 處理草稿和一般筆記的響應格式
+        setFile(fileData);
+        setName(fileData.name);
+        setDescription(fileData.description);
+        setSubject(fileData.subject || '其他');
+        setDifficulty(fileData.difficulty || '中等');
+        setTags(fileData.tags?.join(', ') || '');
+        setContent(fileData.content || '');
+        setIsPublic(fileData.isPublic !== undefined ? fileData.isPublic : true);
+        setShowOnProfile(fileData.showOnProfile || false);
+        setIsDraft(fileData.isDraft || false); // 記錄是否為草稿
       }
     } catch (error) {
       console.error('Error fetching file:', error);
@@ -99,7 +109,53 @@ export default function EditFilePage() {
     }
   };
 
-  const handleSave = async () => {
+  const handleSaveDraft = async () => {
+    if (!name || !description) {
+      alert('請填寫名稱和描述');
+      return;
+    }
+
+    setSavingDraft(true);
+    try {
+      const updateData: any = {
+        name,
+        description,
+        subject,
+        difficulty,
+        tags: tags.split(',').map((t) => t.trim()).filter((t) => t),
+        content,
+        isPublic,
+        showOnProfile,
+        isDraft: true,
+      };
+
+      if (file?.fileUrl) {
+        updateData.fileUrl = file.fileUrl;
+      }
+
+      // 使用草稿 API 更新或創建
+      const response = await fetch('/api/questions/draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          draftId: isDraft ? params.id : undefined,
+          ...updateData,
+        }),
+      });
+
+      if (response.ok) {
+        alert('已保存為草稿');
+        router.push('/library/drafts');
+      }
+    } catch (error) {
+      console.error('Error saving draft:', error);
+      alert('保存草稿失敗，請稍後再試');
+    } finally {
+      setSavingDraft(false);
+    }
+  };
+
+  const handlePublish = async () => {
     if (!name || !description) {
       alert('請填寫名稱和描述');
       return;
@@ -116,24 +172,44 @@ export default function EditFilePage() {
         content,
         isPublic,
         showOnProfile,
+        isDraft: false,
       };
 
       if (file?.fileUrl) {
         updateData.fileUrl = file.fileUrl;
       }
 
-      const response = await fetch(`/api/questions/${params.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updateData),
-      });
+      if (isDraft) {
+        // 如果從草稿發布，需要創建新的筆記並刪除草稿
+        const createResponse = await fetch('/api/questions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updateData),
+        });
+        
+        if (createResponse.ok) {
+          // 刪除草稿
+          await fetch(`/api/questions/draft?id=${params.id}`, {
+            method: 'DELETE',
+          });
+          const newFile = await createResponse.json();
+          router.push(`/library/view/${newFile._id}`);
+        }
+      } else {
+        // 更新現有筆記
+        const response = await fetch(`/api/questions/${params.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updateData),
+        });
 
-      if (response.ok) {
-        router.push(`/library/view/${params.id}`);
+        if (response.ok) {
+          router.push(`/library/view/${params.id}`);
+        }
       }
     } catch (error) {
-      console.error('Error saving file:', error);
-      alert('儲存失敗，請稍後再試');
+      console.error('Error publishing:', error);
+      alert('發布失敗，請稍後再試');
     } finally {
       setSaving(false);
     }
@@ -326,11 +402,18 @@ export default function EditFilePage() {
               取消
             </button>
             <button
-              onClick={handleSave}
+              onClick={handleSaveDraft}
+              disabled={savingDraft}
+              className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:opacity-50 transition-colors"
+            >
+              {savingDraft ? '儲存中...' : '儲存成草稿'}
+            </button>
+            <button
+              onClick={handlePublish}
               disabled={saving}
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
             >
-              {saving ? '儲存中...' : '儲存'}
+              {saving ? '發布中...' : '發布'}
             </button>
           </div>
         </div>

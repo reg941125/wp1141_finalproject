@@ -19,6 +19,14 @@ export async function GET(request: Request) {
 
     const query: any = {};
 
+    // 排除草稿（除非查詢自己的且沒有指定 publicOnly）
+    if (!userId || publicOnly) {
+      query.isDraft = { $ne: true };
+    } else if (userId && session?.user?.id !== userId) {
+      // 查詢其他用戶的，排除草稿
+      query.isDraft = { $ne: true };
+    }
+
     // 如果指定了 userId
     if (userId) {
       query.authorId = userId;

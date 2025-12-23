@@ -49,6 +49,10 @@ export async function PUT(
     }
 
     const updates = await request.json();
+    // 如果更新時設置 isDraft 為 false，確保草稿被發布
+    if (updates.isDraft === false) {
+      updates.isDraft = false;
+    }
     Object.assign(file, updates);
     await file.save();
 

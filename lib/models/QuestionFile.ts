@@ -45,6 +45,10 @@ const QuestionFileSchema = new Schema<QuestionFile>(
       type: Boolean,
       default: true, // 預設公開，其他用戶可以瀏覽和下載
     },
+    isDraft: {
+      type: Boolean,
+      default: false, // 是否為草稿
+    },
   },
   {
     timestamps: true,

@@ -74,6 +74,7 @@ export interface QuestionFile {
   difficulty: '簡單' | '中等' | '困難';
   tags: string[];
   isPublic: boolean;
+  isDraft?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
