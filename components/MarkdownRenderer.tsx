@@ -8,6 +8,7 @@ import { parseLaTeX } from './LaTeXParser';
 import Image from 'next/image';
 import PostLinkEmbed from './PostLinkEmbed';
 import ExternalLinkPreview from './ExternalLinkPreview';
+import PreviewExternalLink from './PreviewExternalLink';
 import { useMemo } from 'react';
 
 interface MarkdownRendererProps {
@@ -126,9 +127,9 @@ export default function MarkdownRenderer({ content, className = '', preview = fa
         }
         
         if (part.type === 'external-link') {
-          // 预览模式：只显示文字
+          // 预览模式：使用 PreviewExternalLink 显示替代文字和 hover 预览
           if (preview) {
-            return <span key={`external-link-${index}`} className="text-gray-500 dark:text-gray-400 text-sm">[外部連結]</span>;
+            return <PreviewExternalLink key={`external-link-${index}`} url={part.content} />;
           }
           return <ExternalLinkPreview key={`external-link-${index}`} url={part.content} />;
         }
@@ -191,6 +192,48 @@ export default function MarkdownRenderer({ content, className = '', preview = fa
                 return <code className="block bg-gray-100 dark:bg-gray-800 p-2 rounded text-sm overflow-x-auto text-gray-900 dark:text-gray-100" {...props} />;
               },
               pre: ({ node, ...props }) => <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto mb-2" {...props} />,
+              a: ({ node, href, children, ...props }: any) => {
+                // 检查是否是外部链接
+                if (!href) return <a {...props}>{children}</a>;
+                
+                try {
+                  const url = new URL(href);
+                  const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+                  
+                  // 检查是否是站内链接
+                  const isInternalPost = /\/questions\/([a-f0-9]{24})/.test(href);
+                  const isInternal = url.origin === currentOrigin || isInternalPost;
+                  
+                  // 预览模式下，外部链接使用 PreviewExternalLink
+                  if (preview && !isInternal) {
+                    return <PreviewExternalLink url={href}>{children}</PreviewExternalLink>;
+                  }
+                  
+                  // 非预览模式或内部链接，使用默认渲染
+                  return (
+                    <a
+                      href={href}
+                      target={isInternal ? undefined : '_blank'}
+                      rel={isInternal ? undefined : 'noopener noreferrer'}
+                      className="text-blue-600 dark:text-blue-400 hover:underline"
+                      {...props}
+                    >
+                      {children}
+                    </a>
+                  );
+                } catch {
+                  // URL 解析失败，使用默认渲染
+                  return (
+                    <a
+                      href={href}
+                      className="text-blue-600 dark:text-blue-400 hover:underline"
+                      {...props}
+                    >
+                      {children}
+                    </a>
+                  );
+                }
+              },
             }}
           >
             {part.content}

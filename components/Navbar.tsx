@@ -235,7 +235,10 @@ export default function Navbar() {
   // 當打開搜索時，focus 到輸入框
   useEffect(() => {
     if (isSearchOpen && searchInputRef.current) {
-      searchInputRef.current.focus();
+      // 使用 setTimeout 確保 DOM 已完全渲染
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
     }
   }, [isSearchOpen]);
 
@@ -243,12 +246,13 @@ export default function Navbar() {
     <>
       {/* 移動版搜索覆蓋層 */}
       {isSearchOpen && (
-        <div className="sm:hidden fixed inset-0 z-50 bg-white dark:bg-gray-900">
+        <div ref={searchRef} className="sm:hidden fixed inset-0 z-50 bg-white dark:bg-gray-900">
           <div className="flex flex-col h-full">
             {/* 搜索頭部 */}
             <div className="flex items-center gap-2 p-4 border-b border-gray-200 dark:border-gray-700">
               <button
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   setIsSearchOpen(false);
                   setSearchQuery('');
                   setSearchResults(null);
@@ -275,6 +279,8 @@ export default function Navbar() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={(e) => e.stopPropagation()}
                 placeholder="搜索題目、家教、筆記或用戶..."
                 className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
               />
@@ -531,7 +537,10 @@ export default function Navbar() {
                 <div className="relative" ref={searchRef}>
                   <button
                     data-search-button
-                    onClick={() => setIsSearchOpen(!isSearchOpen)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsSearchOpen(!isSearchOpen);
+                    }}
                     className="relative p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
                     aria-label="搜索"
                   >
