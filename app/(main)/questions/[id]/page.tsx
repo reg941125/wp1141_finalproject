@@ -23,6 +23,7 @@ interface Post {
     _id: string;
     name: string;
     image?: string;
+    customImage?: string;
   };
   createdAt: string;
   views: number;
@@ -37,6 +38,7 @@ interface Answer {
     _id: string;
     name: string;
     image?: string;
+    customImage?: string;
   };
   createdAt: string;
   likes: number;
@@ -463,7 +465,7 @@ export default function QuestionDetailPage() {
             >
               {(post.authorId?.customImage || post.authorId?.image) ? (
                 <Image
-                  src={post.authorId.customImage || post.authorId.image}
+                  src={(post.authorId.customImage || post.authorId.image) as string}
                   alt={post.authorId.name}
                   width={32}
                   height={32}
@@ -601,7 +603,7 @@ export default function QuestionDetailPage() {
                   >
                     {(answer.authorId?.customImage || answer.authorId?.image) ? (
                       <Image
-                        src={answer.authorId.customImage || answer.authorId.image}
+                        src={(answer.authorId.customImage || answer.authorId.image) as string}
                         alt={answer.authorId.name}
                         width={32}
                         height={32}

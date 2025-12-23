@@ -64,7 +64,7 @@ export default function MarkdownRenderer({ content, className = '', preview = fa
     allMatches.sort((a, b) => a.index - b.index);
     
     // 移除重疊的匹配（優先保留站內連結）
-    const filteredMatches = [];
+    const filteredMatches: Array<{ type: 'post-embed' | 'external-link'; index: number; length: number; content: string }> = [];
     for (let i = 0; i < allMatches.length; i++) {
       const current = allMatches[i];
       const hasOverlap = filteredMatches.some(prev => 

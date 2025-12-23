@@ -24,6 +24,7 @@ interface Post {
     _id: string;
     name: string;
     image?: string;
+    customImage?: string;
   };
   createdAt: string;
   views: number;
@@ -342,7 +343,7 @@ export default function HomePage() {
                 >
                   {(post.authorId?.customImage || post.authorId?.image) ? (
                     <Image
-                      src={post.authorId.customImage || post.authorId.image}
+                      src={(post.authorId.customImage || post.authorId.image) as string}
                       alt={post.authorId.name}
                       width={32}
                       height={32}

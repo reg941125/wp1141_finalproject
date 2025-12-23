@@ -22,6 +22,7 @@ interface JobPosting {
     _id: string;
     name: string;
     image?: string;
+    customImage?: string;
   };
   createdAt: string;
   isActive: boolean;
@@ -361,7 +362,7 @@ export default function SeekingStudentsPage() {
                   >
                     {(posting.authorId?.customImage || posting.authorId?.image) ? (
                       <Image
-                        src={posting.authorId.customImage || posting.authorId.image}
+                        src={(posting.authorId.customImage || posting.authorId.image) as string}
                         alt={posting.authorId.name}
                         width={24}
                         height={24}

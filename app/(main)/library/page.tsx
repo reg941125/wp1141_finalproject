@@ -14,6 +14,7 @@ interface QuestionFile {
     _id: string;
     name: string;
     image?: string;
+    customImage?: string;
   };
   name: string;
   description: string;
@@ -270,11 +271,12 @@ export default function LibraryPage() {
                 >
                   {(file.authorId.customImage || file.authorId.image) && (
                     <Image
-                      src={file.authorId.customImage || file.authorId.image}
+                      src={(file.authorId.customImage || file.authorId.image) as string}
                       alt={file.authorId.name}
                       width={32}
                       height={32}
                       className="rounded-full"
+                      unoptimized
                     />
                   )}
                   <span className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">

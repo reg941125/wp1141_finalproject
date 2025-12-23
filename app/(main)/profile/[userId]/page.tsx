@@ -26,6 +26,8 @@ interface QuestionFile {
   description: string;
   content: string;
   showOnProfile: boolean;
+  subject?: string;
+  difficulty?: string;
 }
 
 interface JobPosting {

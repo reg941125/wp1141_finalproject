@@ -54,7 +54,7 @@ export default function LikesModal({ users, onClose, title = '按讚的人' }: L
                 >
                   {(user.customImage || user.image) && (
                     <Image
-                      src={user.customImage || user.image}
+                      src={(user.customImage || user.image) as string}
                       alt={user.name}
                       width={40}
                       height={40}
