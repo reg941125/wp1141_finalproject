@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 
 interface JobPostingDialogProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ export default function JobPostingDialog({
   onSubmit,
   defaultType = 'seeking_tutor',
 }: JobPostingDialogProps) {
+  const { data: session } = useSession();
   const [formData, setFormData] = useState<JobPostingData>({
     type: defaultType,
     title: '',
@@ -39,6 +41,38 @@ export default function JobPostingDialog({
   const [hourlyRateMin, setHourlyRateMin] = useState('');
   const [hourlyRateMax, setHourlyRateMax] = useState('');
   const [isRange, setIsRange] = useState(false);
+  const [userTeachingExperience, setUserTeachingExperience] = useState<string>('');
+
+  // 获取用户的教学经历
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (session?.user?.id) {
+        try {
+          const response = await fetch(`/api/users/${session.user.id}`);
+          if (response.ok) {
+            const userData = await response.json();
+            setUserTeachingExperience(userData.teachingExperience || '');
+          }
+        } catch (error) {
+          console.error('Error fetching user profile:', error);
+        }
+      }
+    };
+
+    if (isOpen && session) {
+      fetchUserProfile();
+    }
+  }, [isOpen, session]);
+
+  // 引入教学经历的函数
+  const handleImportTeachingExperience = () => {
+    if (userTeachingExperience) {
+      setFormData({
+        ...formData,
+        requirements: userTeachingExperience,
+      });
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -372,9 +406,20 @@ export default function JobPostingDialog({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                詳細要求
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {formData.type === 'seeking_tutor' ? '詳細要求' : '教學經歷'}
+                </label>
+                {formData.type === 'seeking_student' && userTeachingExperience && (
+                  <button
+                    type="button"
+                    onClick={handleImportTeachingExperience}
+                    className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                  >
+                    引入個人檔案的教學經歷
+                  </button>
+                )}
+              </div>
               <textarea
                 value={formData.requirements}
                 onChange={(e) =>
@@ -383,6 +428,7 @@ export default function JobPostingDialog({
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors"
                 rows={6}
                 required
+                placeholder={formData.type === 'seeking_student' ? '輸入教學經歷，或點擊上方按鈕引入個人檔案的教學經歷' : '輸入詳細要求...'}
               />
             </div>
 
