@@ -4,8 +4,6 @@
 posthog link: https://us.posthog.com/shared/rS4f_31fGuaEheXdicw5e7uwyknDGA  
 vercel deploy link: https://wp1141-finalproject.vercel.app/
 
-## 功能特色
-
 ## 技術棧
 
 - **前端框架**: Next.js 14+ (App Router) with TypeScript
