@@ -320,12 +320,12 @@ export default function HomePage() {
           尚無題目，成為第一個發問的人吧！
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-5">
           {filteredPosts.map((post) => (
             <Link
               key={post._id}
               href={`/questions/${post._id}`}
-              className="block bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 p-6 hover:shadow-lg dark:hover:shadow-gray-900/70 transition-shadow"
+              className="block bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 p-6 hover:shadow-lg dark:hover:shadow-gray-900/70 transition-all hover:scale-105 duration-300"
             >
               <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
                 {post.title}

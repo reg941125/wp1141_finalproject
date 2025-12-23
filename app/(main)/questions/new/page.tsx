@@ -57,7 +57,7 @@ export default function NewQuestionPage() {
   };
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-gray-100">發問</h1>
       <QuestionForm
         onSubmit={handleSubmit}
