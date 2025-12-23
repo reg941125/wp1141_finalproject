@@ -1,6 +1,8 @@
 # 家教網平台
 
-一個全端家教網平台，包含題目討論區、家教專區、題目與筆記專區、個人檔案系統。
+一個全端家教網平台，包含題目討論區、家教專區、題目與筆記專區、個人檔案系統。  
+posthog link: https://us.posthog.com/shared/rS4f_31fGuaEheXdicw5e7uwyknDGA  
+vercel deploy link: https://wp1141-finalproject.vercel.app/
 
 ## 功能特色
 
