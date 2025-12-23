@@ -57,6 +57,8 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [firstUnreadMessageId, setFirstUnreadMessageId] = useState<string | null>(null);
+  const lastConversationIdRef = useRef<string | null>(null);
+  const shouldScrollOnEnterRef = useRef<boolean>(false);
 
   const fetchSingleConversation = useCallback(async (id: string) => {
     try {
@@ -107,7 +109,7 @@ export default function ChatPage() {
     }
   }, []);
 
-  const fetchMessages = useCallback(async (id: string) => {
+  const fetchMessages = useCallback(async (id: string, isInitialLoad: boolean = false) => {
     try {
       const response = await fetch(`/api/conversations/${id}/messages`);
       if (response.ok) {
@@ -120,6 +122,14 @@ export default function ChatPage() {
         );
         if (firstUnread) {
           setFirstUnreadMessageId(firstUnread._id);
+        } else {
+          setFirstUnreadMessageId(null);
+        }
+        
+        // 如果是首次加载或切换对话，标记需要滚动
+        if (isInitialLoad || lastConversationIdRef.current !== id) {
+          shouldScrollOnEnterRef.current = true;
+          lastConversationIdRef.current = id;
         }
       }
     } catch (error) {
@@ -130,7 +140,7 @@ export default function ChatPage() {
   const handleSelectConversation = useCallback((conversation: Conversation) => {
     setSelectedConversation(conversation);
     router.push(`/chat?id=${conversation._id}`, { scroll: false });
-    fetchMessages(conversation._id);
+    fetchMessages(conversation._id, true);
   }, [router, fetchMessages]);
 
   useEffect(() => {
@@ -147,7 +157,7 @@ export default function ChatPage() {
         fetchConversations();
         fetchUnreadCounts();
         if (conversationId) {
-          fetchMessages(conversationId);
+          fetchMessages(conversationId, false);
         }
       }, 2000);
       return () => clearInterval(interval);
@@ -159,24 +169,49 @@ export default function ChatPage() {
       const conv = conversations.find(c => c._id === conversationId);
       if (conv) {
         setSelectedConversation(conv);
-        fetchMessages(conversationId);
+        // 检查是否是切换对话
+        const isNewConversation = lastConversationIdRef.current !== conversationId;
+        fetchMessages(conversationId, isNewConversation);
       }
     } else {
       setSelectedConversation(null);
       setMessages([]);
+      lastConversationIdRef.current = null;
+      shouldScrollOnEnterRef.current = false;
     }
   }, [conversationId, conversations, fetchMessages]);
 
+  // 只在进入时滚动，有新消息则从新消息开始显示，没有则滚动到底部
   useEffect(() => {
-    if (messages.length > 0 && messagesContainerRef.current) {
+    if (messages.length > 0 && messagesContainerRef.current && shouldScrollOnEnterRef.current) {
       setTimeout(() => {
-        messagesContainerRef.current?.scrollTo({
-          top: messagesContainerRef.current.scrollHeight,
-          behavior: 'smooth'
-        });
+        if (!messagesContainerRef.current) return;
+        
+        // 如果有未读消息，滚动到第一条未读消息
+        if (firstUnreadMessageId) {
+          const unreadElement = document.getElementById(`message-${firstUnreadMessageId}`);
+          if (unreadElement) {
+            unreadElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          } else {
+            // 如果找不到元素，滚动到底部
+            messagesContainerRef.current.scrollTo({
+              top: messagesContainerRef.current.scrollHeight,
+              behavior: 'smooth'
+            });
+          }
+        } else {
+          // 没有未读消息，滚动到底部
+          messagesContainerRef.current.scrollTo({
+            top: messagesContainerRef.current.scrollHeight,
+            behavior: 'smooth'
+          });
+        }
+        
+        // 重置标志，后续更新不再自动滚动
+        shouldScrollOnEnterRef.current = false;
       }, 100);
     }
-  }, [messages]);
+  }, [messages, firstUnreadMessageId]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -198,6 +233,14 @@ export default function ChatPage() {
           inputRef.current?.focus();
         }, 100);
         fetchConversations();
+        
+        // 用户发送消息后，滚动到底部
+        setTimeout(() => {
+          messagesContainerRef.current?.scrollTo({
+            top: messagesContainerRef.current?.scrollHeight || 0,
+            behavior: 'smooth'
+          });
+        }, 100);
       }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -487,6 +530,7 @@ export default function ChatPage() {
                       
                       <div className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                         <div
+                          id={`message-${message._id}`}
                           className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
                             isMe
                               ? 'bg-blue-500 text-white rounded-br-sm'
