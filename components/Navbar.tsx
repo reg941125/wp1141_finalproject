@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import ThemeToggle from './ThemeToggle';
 import Image from 'next/image';
+import { FaPlus } from "react-icons/fa";
 
 interface Notification {
   _id: string;
@@ -446,8 +447,10 @@ export default function Navbar() {
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <Link href="/" className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                家教網平台
+              <Link href="/" className="text-xl font-bold text-blue-600 dark:text-blue-400 flex items-center group">
+                
+                <div className="text-3xl font-bold mr-0.5 group-hover:rotate-90 transition-transform duration-300">+</div>
+                教網
               </Link>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">

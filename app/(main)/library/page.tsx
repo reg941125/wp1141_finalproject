@@ -261,8 +261,9 @@ export default function LibraryPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {files.map((file) => (
-            <div
+            <Link
               key={file._id}
+              href={`/library/view/${file._id}`}
               className="bg-white dark:bg-gray-800 rounded-lg shadow-md dark:shadow-gray-900/50 p-6 hover:shadow-lg transition-shadow flex flex-col h-full"
             >
               {/* 頂部內容 */}
@@ -300,7 +301,7 @@ export default function LibraryPage() {
 
               {/* 底部內容：標籤和按鈕 */}
               <div className="mt-auto">
-                <div className="flex flex-wrap gap-2 mb-4">
+                <div className="flex flex-wrap gap-2">
                   <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 text-xs rounded">
                     {file.subject}
                   </span>
@@ -316,23 +317,8 @@ export default function LibraryPage() {
                     </span>
                   ))}
                 </div>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleDownload(file)}
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm flex items-center justify-center"
-                  >
-                    <FaFileDownload className="mr-2" /> 下載
-                  </button>
-                  <Link
-                    href={`/library/view/${file._id}`}
-                    className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm text-center"
-                  >
-                    查看
-                  </Link>
-                </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}
