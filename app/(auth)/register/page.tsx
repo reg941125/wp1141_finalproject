@@ -12,6 +12,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -47,22 +48,23 @@ export default function RegisterPage() {
 
       if (!response.ok) {
         setError(data.error || '註冊失敗');
+        setLoading(false);
         return;
       }
 
-      // Auto login after registration
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-      });
-
-      if (result?.error) {
+      // 顯示成功訊息，提示用戶檢查郵件
+      setSuccess(data.message || '註冊成功！請檢查您的電子郵件以驗證帳號。');
+      
+      // 清空表單
+      setName('');
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
+      
+      // 3 秒後導航到登入頁面
+      setTimeout(() => {
         router.push('/login');
-      } else {
-        router.push('/');
-        router.refresh();
-      }
+      }, 3000);
     } catch (err) {
       setError('發生錯誤，請稍後再試');
     } finally {
@@ -86,6 +88,19 @@ export default function RegisterPage() {
           {error && (
             <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded transition-colors">
               {error}
+            </div>
+          )}
+          {success && (
+            <div className="bg-green-100 dark:bg-green-900/30 border border-green-400 dark:border-green-700 text-green-700 dark:text-green-300 px-4 py-3 rounded transition-colors">
+              <div className="flex items-start">
+                <svg className="w-5 h-5 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <div>
+                  <p className="font-medium">{success}</p>
+                  <p className="text-sm mt-1">將在 3 秒後自動導航到登入頁面...</p>
+                </div>
+              </div>
             </div>
           )}
           <div className="space-y-4">
